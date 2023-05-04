@@ -2,4 +2,4 @@
 data packetizer for RET-CR
 
 Requirements:  
-libmosquitto, libcurl, libtar
+libmosquitto, libcurl, libtar, binutils (for libiberty)  
