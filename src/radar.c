@@ -376,7 +376,7 @@ int ret_radar_dump(FILE *f, const ret_radar_data_t *data, int indent)
   dump_u32(crc32); 
   dump_u32(index); 
   dump_u32(struct_version); 
-  nwr += fprintf(f,"%*s{%u.%09u,\n", indent, " ",data->cpu_time.secs, data->cpu_time.nsecs); 
+  nwr += fprintf(f,"%*s\"cpu_time\" : %u.%09u,\n", indent, " ",data->cpu_time.secs, data->cpu_time.nsecs); 
   dump_arr(station_counter, "%lu", 6); 
   dump_arr(l0_rate_monitor, "%u", 6); 
   dump_u32(adc_read_index);
