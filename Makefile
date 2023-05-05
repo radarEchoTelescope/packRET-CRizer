@@ -1,5 +1,5 @@
 BUILD_DIR=build
-CFLAGS=-fPIC -Og -Wall -Wextra -g -std=gnu11 -I./src 
+CFLAGS=-fPIC -Og -Wall -Wextra -g -std=gnu11 -I./src -I/usr/include/libiberty 
 LDFLAGS=-shared 
 LIBS=-lcurl 
 INCLUDES=src/radar.h
