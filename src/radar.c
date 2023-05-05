@@ -17,6 +17,7 @@
 
 
 
+static char curl_error_msg[CURL_ERROR_SIZE]; 
 
 
 static int setup_serial(const char * dev, int baud) 
@@ -191,6 +192,7 @@ static CURL * setup_curl_handle(const char *hostname)
     return NULL; 
   }
 
+  curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error_msg); 
   //set up our callback 
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, my_curl_write_cb); 
   char * url = NULL; 
@@ -333,7 +335,7 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_gps_tm_t * tm, ret_radar_dat
 
     if (notok || ret_radar_data_check_crc(d))
     {
-      if (notok) fprintf(stderr,"curl returned %d, retrying\n", notok); 
+      if (notok) fprintf(stderr,"curl returned %d (%s), retrying\n", notok, curl_error_msg); 
       write(h->ack_fd,"?",1); 
     }
     else
