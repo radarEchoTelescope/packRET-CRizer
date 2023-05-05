@@ -297,7 +297,7 @@ int ret_radar_data_check_crc(const ret_radar_data_t * d)
 {
 
     uint8_t * cdata = (uint8_t*) d;
-    uint32_t crc = xcrc32( cdata + sizeof(crc), sizeof(ret_radar_data_t) - sizeof(crc),0); 
+    uint32_t crc = xcrc32( cdata + sizeof(crc), sizeof(ret_radar_data_t) - sizeof(crc),0xffffffff); 
     if (crc == d->crc32)
     {
       return 0; 
