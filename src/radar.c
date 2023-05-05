@@ -236,7 +236,7 @@ ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio,
   int ack_fd = setup_serial(ack_serial, 115200); 
   if (ack_fd <=0) return NULL; 
 
-  int gps_fd = setup_serial(gps_serial, 9600); 
+  int gps_fd = setup_serial(gps_serial, 115200); 
   if (gps_fd <=0) return NULL; 
 
   // we got everything open 
