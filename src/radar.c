@@ -329,11 +329,11 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_gps_tm_t * tm, ret_radar_dat
     //initialize the transfer
     //this is blocking. Maybe use non-blocking later so can read serial and gps timestamp at same time? 
     notok = curl_easy_perform(h->tftp_handle); 
-    if (notok) continue; 
 
 
-    if (ret_radar_data_check_crc(d))
+    if (notok || ret_radar_data_check_crc(d))
     {
+      if (notok) fprintf(stderr,"curl returned %d, retrying\n", notok); 
       write(h->ack_fd,"?",1); 
     }
     else
