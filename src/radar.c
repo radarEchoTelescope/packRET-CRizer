@@ -366,6 +366,7 @@ void ret_radar_close(ret_radar_t * h)
 }
 
 #define dump_u32(x) nwr += fprintf(f,"%*s  \"" #x "\": %u,\n", indent, " ", data->x) 
+#define dump_u64(x) nwr += fprintf(f,"%*s  \"" #x "\": %"PRIu64",\n", indent, " ", data->x) 
 #define dump_u16(x) nwr += fprintf(f,"%*s  \"" #x "\": %hu,\n", indent, " ", data->x) 
 #define dump_h32(x) nwr += fprintf(f,"%*s  \"" #x "\": 0x%x,\n", indent, " ", data->x) 
 #define dump_arr(x,format,N) fprintf(f,"%*s  \"" #x "\" : [", indent, " "); for (int i = 0; i < N; i++) nwr += fprintf(f,format "%s", data->x[i], i < N-1 ? "," :"") 
@@ -379,7 +380,7 @@ int ret_radar_dump(FILE *f, const ret_radar_data_t *data, int indent)
   dump_u32(crc32); 
   dump_u32(index); 
   dump_u32(struct_version); 
-  nwr += fprintf(f,"%*s\"cpu_time\" : %u.%09u,\n", indent, " ",data->cpu_time.secs, data->cpu_time.nsecs); 
+  dump_u64(cpu_time); 
   dump_arr(station_counter, "%"PRIu64, 6); 
   dump_arr(l0_rate_monitor, "%u", 6); 
   dump_u32(adc_read_index);

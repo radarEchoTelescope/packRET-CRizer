@@ -22,7 +22,7 @@ typedef struct ret_radar_gps_tm
 #endif
 
 #ifndef XTime
-#define XTime struct { uint32_t secs; uint32_t nsecs; } 
+#define XTime uint64_t
 #endif
 
 #ifndef u64
