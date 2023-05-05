@@ -312,7 +312,6 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_gps_tm_t * tm, ret_radar_dat
 
   struct ret_curl_target t; 
   t.data= d; 
-  t.nwritten = 0; 
 
   curl_easy_setopt(h->tftp_handle, CURLOPT_WRITEDATA,&t); 
   // first we wait on the interrupt, potentially with a timeout
@@ -328,6 +327,7 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_gps_tm_t * tm, ret_radar_dat
   int notok = 1;
   while(1) 
   {
+    t.nwritten = 0; 
     //initialize the transfer
     //this is blocking. Maybe use non-blocking later so can read serial and gps timestamp at same time? 
     notok = curl_easy_perform(h->tftp_handle); 
