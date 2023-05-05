@@ -1,5 +1,5 @@
 BUILD_DIR=build
-CFLAGS=-fPIC -Og -Wall -Wextra -g -std=gnu11 -I./src -I/usr/include/libiberty 
+CFLAGS=-Og -fPIC -Wall -Wextra -g -std=gnu11 -I./src -I/usr/include/libiberty 
 LDFLAGS=-shared 
 LIBS=-lcurl 
 INCLUDES=src/radar.h
@@ -27,8 +27,8 @@ $(BUILD_DIR)/libradar.so: $(addprefix $(BUILD_DIR)/, $(RAD_OBJS))
 	@echo Linking $@
 	@cc -o $@ $(LDFLAGS) $^  $(LIBS) 
 
-(BUILD_DIR)/%: src/%.c
-	@echo Linking $@
-	@cc -o $@ $(LDFLAGS) $^  $(LIBS) -L$(BUILD_DIR)/ -lradar 
+$(BUILD_DIR)/%: src/%.c
+	@echo Building $@
+	@cc -o $@ $(CFLAGS)  $^ $(LIBS) -L$(BUILD_DIR)/ -lradar -liberty
 
 
