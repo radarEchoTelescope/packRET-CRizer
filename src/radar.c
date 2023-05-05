@@ -176,7 +176,7 @@ static size_t my_curl_write_cb(char *ptr, size_t sz, size_t nm, void *userdata)
     len_after = sizeof(ret_radar_data_t); 
   }
   size_t nwrite = len_after - t->nwritten;
-  memcpy( (uint8_t*) t->data, ptr, nwrite); 
+  memcpy( (uint8_t*) t->data+t->nwritten, ptr, nwrite); 
   t->nwritten += nwrite; 
   return  nwrite; 
 }
