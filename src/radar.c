@@ -369,7 +369,7 @@ void ret_radar_close(ret_radar_t * h)
 #define dump_u64(x) nwr += fprintf(f,"%*s  \"" #x "\": %"PRIu64",\n", indent, " ", data->x) 
 #define dump_u16(x) nwr += fprintf(f,"%*s  \"" #x "\": %hu,\n", indent, " ", data->x) 
 #define dump_h32(x) nwr += fprintf(f,"%*s  \"" #x "\": 0x%x,\n", indent, " ", data->x) 
-#define dump_arr(x,format,N) fprintf(f,"%*s  \"" #x "\" : [", indent, " "); for (int i = 0; i < N; i++) nwr += fprintf(f,format "%s", data->x[i], i < N-1 ? "," :"") 
+#define dump_arr(x,format,N) fprintf(f,"%*s  \"" #x "\" : [", indent, " "); for (int i = 0; i < N; i++) nwr += fprintf(f,format "%s", data->x[i], i < N-1 ? "," :"")  ; fprintf(f,"],\n"); 
 
 
 int ret_radar_dump(FILE *f, const ret_radar_data_t *data, int indent) 
