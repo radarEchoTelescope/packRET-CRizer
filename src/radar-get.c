@@ -10,7 +10,7 @@ static ret_radar_gps_tm_t tm;
 const char * hostname = "192.168.98.40"; 
 int interrupt_gpio = 23;
 const char * ack_serial =  "/dev/serial/by-id/usb-Xilinx_JTAG+3Serial_68646-if02-port0"; 
-const char * gps_serial = "/dev/ttyS3" ; 
+const char * gps_serial = "/dev/ttyAMA0"; 
 int N = -1; 
 
 volatile int break_flag = 0; 
