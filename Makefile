@@ -1,7 +1,7 @@
 BUILD_DIR=build
 CFLAGS=-Og -fPIC -Wall -Wextra -g -std=gnu11 -I./src -I/usr/include/libiberty 
 LDFLAGS=-shared 
-LIBS=-lcurl 
+LIBS=-lcurl -liberty -lm
 INCLUDES=src/radar.h
 
 .PHONY: radar  clean
@@ -29,6 +29,6 @@ $(BUILD_DIR)/libradar.so: $(addprefix $(BUILD_DIR)/, $(RAD_OBJS))
 
 $(BUILD_DIR)/%: src/%.c
 	@echo Building $@
-	@cc -o $@ $(CFLAGS)  $^ $(LIBS) -L$(BUILD_DIR)/ -lradar -liberty
+	@cc -o $@ $(CFLAGS)  $^ $(LIBS) -L$(BUILD_DIR)/ -lradar 
 
 
