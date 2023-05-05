@@ -38,26 +38,26 @@ int main(int nargs, char ** args)
 
     if (!strcmp(args[i],"-h"))
     {
-      hostname = args[i++]; 
+      hostname = args[++i]; 
     }
 
     if (!strcmp(args[i],"-i"))
     {
-      interrupt_gpio = atoi(args[i++]); 
+      interrupt_gpio = atoi(args[++i]); 
     }
 
     if (!strcmp(args[i],"-a"))
     {
-      ack_serial = args[i++];
+      ack_serial = args[++i];
     }
 
     if (!strcmp(args[i],"-g"))
     {
-      gps_serial = args[i++];
+      gps_serial = args[++i];
     }
     if (!strcmp(args[i],"-N"))
     {
-      N = atoi(args[i++]);
+      N = atoi(args[++i]);
     }
   }
 
@@ -71,7 +71,7 @@ int main(int nargs, char ** args)
   printf("{\n  \"events\" = [ "); 
   while(1) 
   {
-    if (N > 0 && N > nevents) break; 
+    if (N > 0 && nevents > N) break; 
     if (!ret_radar_next_event(radar, &tm, &d)) 
     {
       printf("  {\n"); 
