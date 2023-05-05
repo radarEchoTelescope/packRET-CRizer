@@ -300,6 +300,7 @@ int ret_radar_data_check_crc(const ret_radar_data_t * d)
     {
       return 0; 
     }
+    fprintf(stderr,"crc check failed, %u vs %u\n", crc, d->crc32); 
     return 1; 
 }
 
