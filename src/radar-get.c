@@ -7,7 +7,7 @@
 static ret_radar_data_t d;
 static ret_radar_gps_tm_t tm;
 
-const char * hostname = "192.168.98.10"; 
+const char * hostname = "192.168.98.40"; 
 int interrupt_gpio = 23;
 const char * ack_serial =  "/dev/serial/by-id/usb-Xilinx_JTAG+3Serial_68646-if02-port0"; 
 const char * gps_serial = "/dev/ttyS3" ; 
@@ -24,7 +24,7 @@ void sighandler(int sig)
 
 void usage() 
 {
-  fprintf(stderr, "radar -get [-h HOSTNAME=%s] [-i interrupt-gpio = %d] [-a ack_serial = %s ] [-g gps_serial = %s] [-N number = %d]\n",
+  fprintf(stderr, "radar-get [-h HOSTNAME=%s] [-i interrupt-gpio = %d] [-a ack_serial = %s ] [-g gps_serial = %s] [-N number = %d]\n",
       hostname, interrupt_gpio, ack_serial, gps_serial, N); 
   exit(1); 
 }
@@ -34,7 +34,7 @@ int main(int nargs, char ** args)
 
   for (int i = 1; i < nargs; i++) 
   {
-    if (i < nargs -1) usage(); 
+    if (i == nargs -1) usage(); 
 
     if (!strcmp(args[i],"-h"))
     {
@@ -87,6 +87,8 @@ int main(int nargs, char ** args)
   }
 
   printf("  ]\n}\n"); 
+  ret_radar_close(radar); 
+  return 0; 
 }
 
 
