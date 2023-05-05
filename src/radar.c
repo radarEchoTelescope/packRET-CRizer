@@ -37,7 +37,7 @@ static int setup_serial(const char * dev, int baud)
       return 0; 
 
   }
-  if (baud != 9600 || baud != 115200) 
+  if (baud != 9600 && baud != 115200) 
   {
     fprintf(stderr,"Unsupported baud rate %d, setting to 9600\n", baud); 
 
