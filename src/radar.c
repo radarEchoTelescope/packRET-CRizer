@@ -369,6 +369,7 @@ void ret_radar_close(ret_radar_t * h)
 #define dump_u64(x) nwr += fprintf(f,"%*s  \"" #x "\": %"PRIu64",\n", indent, " ", data->x) 
 #define dump_u16(x) nwr += fprintf(f,"%*s  \"" #x "\": %hu,\n", indent, " ", data->x) 
 #define dump_h32(x) nwr += fprintf(f,"%*s  \"" #x "\": 0x%x,\n", indent, " ", data->x) 
+#define dump_float(x) nwr += fprintf(f,"%*s  \"" #x "\": %f,\n", indent, " ", data->x) 
 #define dump_arr(x,format,N) fprintf(f,"%*s  \"" #x "\" : [", indent, " "); for (int i = 0; i < N; i++) nwr += fprintf(f,format "%s", data->x[i], i < N-1 ? "," :"")  ; fprintf(f,"],\n"); 
 
 
@@ -381,6 +382,7 @@ int ret_radar_dump(FILE *f, const ret_radar_data_t *data, int indent)
   dump_u32(index); 
   dump_u32(struct_version); 
   dump_u64(cpu_time); 
+  dump_u32(surface_trigger_info); 
   dump_arr(station_counter, "%"PRIu64, 6); 
   dump_arr(l0_rate_monitor, "%u", 6); 
   dump_u32(adc_read_index);
@@ -389,6 +391,14 @@ int ret_radar_dump(FILE *f, const ret_radar_data_t *data, int indent)
   dump_u32(n_surface_stations);
   dump_u32(rf_read_window);
   dump_u32(carrier_cancel_flag);
+  dump_u32(tx_atten);
+  dump_u32(cc_atten);
+  dump_arr(tx_phase,"%f",4); 
+  dump_arr(tx_amplitude,"%f",4); 
+  dump_float(cc_amplitude); 
+  dump_u32(tx_mode); 
+  dump_u32(tx_freq); 
+  dump_u32(priority); 
   dump_arr(adc_0_data,"%hd",16384);
   dump_arr(adc_1_data,"%hd",16384);
   dump_arr(adc_2_data,"%hd",16384);

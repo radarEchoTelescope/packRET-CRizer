@@ -47,6 +47,14 @@ typedef struct ret_radar_data {
   u32 n_surface_stations;
   u32 rf_read_window;
   u32 carrier_cancel_flag;
+  u32 tx_atten;
+  u32 cc_atten;
+  float tx_phase[4];
+  float tx_amplitude[4];
+  float cc_amplitude;
+  u32 tx_mode;
+  u32 tx_freq;
+  u32 priority;
   s16 adc_0_data[16384];
   s16 adc_1_data[16384];
   s16 adc_2_data[16384];
