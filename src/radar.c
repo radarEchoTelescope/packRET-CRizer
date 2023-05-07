@@ -234,7 +234,10 @@ ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio,
   if (gpio_fd <=0) return NULL; 
 
   int ack_fd = setup_serial(ack_serial, 115200); 
-  if (ack_fd <=0) return NULL; 
+  if (ack_fd <=0)
+  {
+    fprintf(stderr,"Running without ack? Is that what you want?\n"); 
+  }
 
   int gps_fd = setup_serial(gps_serial, 115200); 
   if (gps_fd <=0) return NULL; 
@@ -336,7 +339,7 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_gps_tm_t * tm, ret_radar_dat
     if (notok || ret_radar_data_check_crc(d))
     {
       if (notok) fprintf(stderr,"curl returned %d (%s), retrying\n", notok, curl_error_msg); 
-      write(h->ack_fd,"?",1); 
+      if (h->ack_fd >0) write(h->ack_fd,"?",1); 
     }
     else
     {
@@ -348,7 +351,7 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_gps_tm_t * tm, ret_radar_dat
 
   //read the GPS, TODO add error checking 
   read(h->gps_fd, tm, sizeof(*tm)); 
-  write(h->ack_fd,"!",1); 
+  if (h->ack_fd >0) write(h->ack_fd,"!",1); 
 
   return 0; 
 } 
