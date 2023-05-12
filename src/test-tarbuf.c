@@ -23,6 +23,7 @@ int main(int nargs, char ** args)
   tar_buf_write(t, strlen(test2), test2, "test2.txt") ; 
 
   tar_append_eof(t); 
+  tar_close(t); 
   return 0; 
 
 }
