@@ -427,3 +427,21 @@ int ret_radar_gps_tm_dump(FILE * f, const ret_radar_gps_tm_t * data, int indent)
 #undef dump_u32
 #undef dump_h32
 #undef dump_arr
+
+int ret_radar_fill_time(const ret_radar_gps_tm_t *g, struct timespec *t) 
+{
+
+  const int num_rollovers = 2; 
+
+  int gps_weeks = g->weeknum + num_rollovers*1024; 
+  int gps_secs = gps_weeks * 7 * 24 * 3600 + g->tow/1000; 
+  int utc_secs = gps_secs + 315964800 - 18; // UTC to GPS epcoh correction and number of leap seconds after 1908 
+
+  int nsecs = (g->tow % 1000) *1e6 + g->tow_f; 
+
+  if(t) 
+  {
+    t->tv_sec = utc_secs; 
+    t->tv_nsec = nsecs; 
+  }
+}

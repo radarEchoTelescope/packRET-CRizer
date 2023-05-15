@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <time.h> 
 
 typedef struct ret_radar ret_radar_t; 
 
@@ -84,6 +85,7 @@ int ret_radar_data_check_crc(const ret_radar_data_t * d);
 //dumps data as json 
 int ret_radar_dump(FILE *f , const ret_radar_data_t * data, int indent); 
 int ret_radar_gps_tm_dump(FILE *, const ret_radar_gps_tm_t * data, int indent); 
+int ret_radar_fill_time(const ret_radar_gps_tm_t *g, struct timespec *t); 
 
 //close handle
 void ret_radar_close(ret_radar_t *h ); 
