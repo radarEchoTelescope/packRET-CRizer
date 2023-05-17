@@ -161,7 +161,7 @@ int setup_int_gpio(int gpionum)
 
 struct ret_curl_target
 {
-  ret_radar_data_t * data; 
+  ret_radar_rfsoc_data_t * data; 
   size_t nwritten; 
 }; 
 
@@ -170,10 +170,10 @@ static size_t my_curl_write_cb(char *ptr, size_t sz, size_t nm, void *userdata)
   struct ret_curl_target * t = (struct ret_curl_target *) userdata; 
 
   size_t len_after = t->nwritten + sz*nm; 
-  if (len_after > sizeof(ret_radar_data_t))
+  if (len_after > sizeof(ret_radar_rfsoc_data_t))
   {
     fprintf(stderr,"WARNING: we have %zu more bytes than we expect from tftp? Someone screwed up, probably one of us two \n", len_after - sizeof(ret_radar_data_t));
-    len_after = sizeof(ret_radar_data_t); 
+    len_after = sizeof(ret_radar_rfsoc_data_t); 
   }
   size_t nwrite = len_after - t->nwritten;
   memcpy( (uint8_t*) t->data+t->nwritten, ptr, nwrite); 
@@ -296,11 +296,11 @@ static int do_poll(ret_radar_t * h)
 }
 
 
-int ret_radar_data_check_crc(const ret_radar_data_t * d) 
+int ret_radar_data_check_crc(const ret_radar_rfsoc_data_t * d) 
 {
 
     uint8_t * cdata = (uint8_t*) d;
-    uint32_t crc = xcrc32( cdata + sizeof(crc), sizeof(ret_radar_data_t) - sizeof(crc),0xffffffff); 
+    uint32_t crc = xcrc32( cdata + sizeof(crc), sizeof(ret_radar_rfsoc_data_t) - sizeof(crc),0xffffffff); 
     if (crc == d->crc32)
     {
       return 0; 
@@ -309,12 +309,12 @@ int ret_radar_data_check_crc(const ret_radar_data_t * d)
     return 1; 
 }
 
-int ret_radar_next_event(ret_radar_t * h, ret_radar_gps_tm_t * tm, ret_radar_data_t * d) 
+int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d) 
 {
   if (!h) return -1; 
 
   struct ret_curl_target t; 
-  t.data= d; 
+  t.data= &d->rfsoc; 
 
   curl_easy_setopt(h->tftp_handle, CURLOPT_WRITEDATA,&t); 
   // first we wait on the interrupt, potentially with a timeout
@@ -336,7 +336,7 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_gps_tm_t * tm, ret_radar_dat
     notok = curl_easy_perform(h->tftp_handle); 
 
 
-    if (notok || ret_radar_data_check_crc(d))
+    if (notok || ret_radar_data_check_crc(&d->rfsoc))
     {
       if (notok) fprintf(stderr,"curl returned %d (%s), retrying\n", notok, curl_error_msg); 
       if (h->ack_fd >0) write(h->ack_fd,"?",1); 
@@ -350,7 +350,7 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_gps_tm_t * tm, ret_radar_dat
 
 
   //read the GPS, TODO add error checking 
-  read(h->gps_fd, tm, sizeof(*tm)); 
+  read(h->gps_fd, &d->gps, sizeof(d->gps)); 
   if (h->ack_fd >0) write(h->ack_fd,"!",1); 
 
   return 0; 
@@ -375,8 +375,7 @@ void ret_radar_close(ret_radar_t * h)
 #define dump_float(x) nwr += fprintf(f,"%*s  \"" #x "\": %f,\n", indent, " ", data->x) 
 #define dump_arr(x,format,N) fprintf(f,"%*s  \"" #x "\" : [", indent, " "); for (int i = 0; i < N; i++) nwr += fprintf(f,format "%s", data->x[i], i < N-1 ? "," :"")  ; fprintf(f,"],\n"); 
 
-
-int ret_radar_dump(FILE *f, const ret_radar_data_t *data, int indent) 
+int ret_radar_rfsoc_dump(FILE *f, const ret_radar_rfsoc_data_t *data, int indent) 
 {
 
   int nwr = 0;
@@ -431,6 +430,7 @@ int ret_radar_gps_tm_dump(FILE * f, const ret_radar_gps_tm_t * data, int indent)
 int ret_radar_fill_time(const ret_radar_gps_tm_t *g, struct timespec *t) 
 {
 
+  if (!g || !t) return -1; 
   const int num_rollovers = 2; 
 
   int gps_weeks = g->weeknum + num_rollovers*1024; 
@@ -439,9 +439,8 @@ int ret_radar_fill_time(const ret_radar_gps_tm_t *g, struct timespec *t)
 
   int nsecs = (g->tow % 1000) *1e6 + g->tow_f; 
 
-  if(t) 
-  {
-    t->tv_sec = utc_secs; 
-    t->tv_nsec = nsecs; 
-  }
+  t->tv_sec = utc_secs; 
+  t->tv_nsec = nsecs; 
+
+  return 0; 
 }

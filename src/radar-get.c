@@ -5,7 +5,6 @@
 #include <stdlib.h> 
 
 static ret_radar_data_t d;
-static ret_radar_gps_tm_t tm;
 
 const char * hostname = "192.168.97.30"; 
 int interrupt_gpio = 23;
@@ -72,14 +71,14 @@ int main(int nargs, char ** args)
   while(1) 
   {
     if (N > 0 && nevents > N) break; 
-    if (!ret_radar_next_event(radar, &tm, &d)) 
+    if (!ret_radar_next_event(radar, &d)) 
     {
       printf("  {\n"); 
       printf("    \"i\"=%d\n", nevents); 
       printf("    \"radar\" :"); 
-      ret_radar_dump(stdout,&d, 6); 
+      ret_radar_rfsoc_dump(stdout,&d.rfsoc, 6); 
       printf("    , \"gps_tm\" :\n"); 
-      ret_radar_gps_tm_dump(stdout,&tm, 6); 
+      ret_radar_gps_tm_dump(stdout,&d.gps, 6); 
       printf("   }\n"); 
       nevents++; 
     }

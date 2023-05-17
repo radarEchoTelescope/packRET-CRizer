@@ -34,7 +34,7 @@ typedef struct ret_radar_gps_tm
 #define s16 int16_t
 #endif
 
-typedef struct ret_radar_data {
+typedef struct ret_radar_rfssoc_data {
   u32 crc32;
   u32 index;
   u32 struct_version;
@@ -60,9 +60,14 @@ typedef struct ret_radar_data {
   s16 adc_1_data[16384];
   s16 adc_2_data[16384];
   s16 adc_3_data[16384];
-}ret_radar_data_t;
+}ret_radar_rfsoc_data_t;
 
 
+typedef struct ret_radar_data
+{
+  ret_radar_rfsoc_data_t rfsoc; 
+  ret_radar_gps_tm_t gps; 
+} ret_radar_data_t; 
 
 // open a handle 
 //   hostname is the hostname to connect to 
@@ -77,13 +82,13 @@ void ret_radar_set_timeout(ret_radar_t * h, double timeout) ;
 
 // poll for the next event, filling it 
 // returns 0 if successful, -1 if timeout exceeded or another error. 
-int ret_radar_next_event(ret_radar_t * h, ret_radar_gps_tm_t * tm,  ret_radar_data_t * d); 
+int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d); 
 
 // check the CRC of the data. Returns 0 if correct. 
-int ret_radar_data_check_crc(const ret_radar_data_t * d); 
+int ret_radar_data_check_crc(const ret_radar_rfsoc_data_t * d); 
 
 //dumps data as json 
-int ret_radar_dump(FILE *f , const ret_radar_data_t * data, int indent); 
+int ret_radar_rfsoc_dump(FILE *f , const ret_radar_rfsoc_data_t * data, int indent); 
 int ret_radar_gps_tm_dump(FILE *, const ret_radar_gps_tm_t * data, int indent); 
 int ret_radar_fill_time(const ret_radar_gps_tm_t *g, struct timespec *t); 
 
