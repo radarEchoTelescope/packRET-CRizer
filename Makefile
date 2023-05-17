@@ -22,7 +22,7 @@ $(BUILD_DIR)/%.o: src/%.c $(INCLUDES) | $(BUILD_DIR)
 	@cc -c -o $@ $(CFLAGS) $< 
 
 
-RAD_OBJS=radar.o cody.o cody-listener.o tarbuf.o
+RAD_OBJS=radar.o cody.o cody-listener.o tarbuf.o ret-writer.o
 $(BUILD_DIR)/libradar.so: $(addprefix $(BUILD_DIR)/, $(RAD_OBJS))
 	@echo Linking $@
 	@cc -o $@ $(LDFLAGS) $^  $(LIBS) 
