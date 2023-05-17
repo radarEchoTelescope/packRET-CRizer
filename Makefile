@@ -1,13 +1,13 @@
 BUILD_DIR=build
 CFLAGS=-Og -fPIC -Wall -Wextra -g -std=gnu11 -I./src -I/usr/include/libiberty 
-LDFLAGS=-shared 
+LDFLAGS=-shared  -lpthread
 LIBS=-lcurl -liberty -lm
 INCLUDES=src/radar.h
 
 .PHONY: radar  clean
 
 
-radar: $(BUILD_DIR)/libradar.so  $(BUILD_DIR)/radar-get  $(BUILD_DIR)/test-tarbuf
+radar: $(BUILD_DIR)/libradar.so  $(BUILD_DIR)/radar-get  $(BUILD_DIR)/test-tarbuf $(BUILD_DIR)/test-cody-listener $(BUILD_DIR)/fake-cody 
 
 clean: 
 	@echo Nuking $(BUILD_DIR) from orbit 

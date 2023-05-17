@@ -53,6 +53,7 @@ void msg_callback(struct mosquitto * mosq, void * unsafe_listener, const struct 
     if(!strcmp(msg->topic,l->topicbuf[i]))
     {
       icody = i;
+      break; 
     }
   }
 
@@ -62,9 +63,9 @@ void msg_callback(struct mosquitto * mosq, void * unsafe_listener, const struct 
     return; 
   }
 
-  if (msg->payloadlen != sizeof(cody_science_t))
+  if (msg->payloadlen != sizeof(cody_data_t))
   {
-    fprintf(stderr,"Unexpected payload length %d (expected %zu) in msgid %d\n", msg->payloadlen, sizeof(cody_science_t), msg->mid); 
+    fprintf(stderr,"Unexpected payload length %d (expected %zu) in msgid %d\n", msg->payloadlen, sizeof(cody_data_t), msg->mid); 
     return; 
   }
 
@@ -223,12 +224,6 @@ cody_listener_t * cody_listener_init (const char * mqtt_host, int port, const ch
 
   mosquitto_message_callback_set(mosq, msg_callback); 
   mosquitto_loop_start(mosq); 
- 
-  for (int i = 0; i < nsubs; i++) 
-  {
-    free(subs[i]); 
-  }
-
 
   for (int i = 0; i < 6; i++) 
   {
@@ -269,6 +264,7 @@ void cody_listener_finish(cody_listener_t * l)
 
   if (l->mosq)
   {
+    mosquitto_disconnect(l->mosq); 
     mosquitto_loop_stop(l->mosq,0); 
     mosquitto_destroy(l->mosq);
   }
@@ -345,7 +341,7 @@ int cody_listener_release(cody_listener_t * l, const cody_data_t * d)
 {
   if (!l || !d) return -1; 
 
-  const struct cody_data_wrapper * dd = (const struct cody_data_wrapper*) (d - offsetof(struct cody_data_wrapper, cody_data)); 
+  const struct cody_data_wrapper * dd = (const struct cody_data_wrapper*) ( ((uint8_t*) d) - offsetof(struct cody_data_wrapper, cody_data)); 
   //check to make sure we have a valid pointer 
   int icody = -1; 
   int i_idx = -1; 
@@ -365,7 +361,7 @@ int cody_listener_release(cody_listener_t * l, const cody_data_t * d)
   if (icody == -1) return -1; 
 
   pthread_mutex_lock(&l->buf_mutex[icody]); 
-  get_ith_filled_entry(icody,l,i_idx,1); 
+  get_ith_filled_entry(icody+1,l,i_idx,1); 
   l->buf_rdy[icody]--; 
   pthread_mutex_unlock(&l->buf_mutex[icody]); 
 
@@ -387,7 +383,18 @@ int cody_listener_wait(cody_listener_t * l, float timeout)
   }
   if (timeout) 
   {
-    struct timespec ts =  { .tv_sec = floor(timeout), .tv_nsec = 1e9*(timeout-floor(timeout)) };
+
+    struct timespec ts; 
+    clock_gettime(CLOCK_REALTIME,&ts); 
+
+    ts.tv_sec += truncf(timeout); 
+    ts.tv_nsec += (timeout - truncf(timeout))*1e9; 
+    if (ts.tv_nsec > 1e9) 
+    {
+      ts.tv_nsec -= 1e9; 
+      ts.tv_sec ++; 
+    }
+
     pthread_cond_timedwait(&l->wait_cond, &l->wait_mut, &ts); 
   }
   else
