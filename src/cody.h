@@ -14,7 +14,7 @@ typedef struct cody_header
   uint16_t packet_len; 
   uint16_t station_event; 
   uint16_t event_len; 
-  uint16_t t3_ev_countt; 
+  uint16_t t3_ev_count; 
   uint16_t station_id; 
   uint16_t header_len; 
 
@@ -58,7 +58,7 @@ cody_science
   uint16_t ew_reset_baseline; 
   uint16_t ns_first_sample;
   uint16_t ns_scaler; 
-  uint16_t ns_first_baseline; 
+  uint16_t ns_reset_baseline; 
   uint16_t post_trigger; 
   uint16_t first_column; 
   uint16_t mode; 
