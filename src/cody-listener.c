@@ -169,14 +169,10 @@ cody_listener_t * cody_listener_init (const char * mqtt_host, int port, const ch
     fprintf(stderr,"topicstr must have exactly one %%d and no other %% in it. Also no # or ?. Given string of \"%s\" fails.\n", topicstr); 
   }
 
-  static int listener_counter = 0; 
-  char listener_name[16]; 
-  sprintf(listener_name,"cody_%d", listener_counter++); 
- 
   cody_listener_t * l = malloc(sizeof(struct cody_listener)); 
   memset(l,0,sizeof(cody_listener_t)); 
 
-  struct mosquitto * mosq = mosquitto_new(listener_name, 0, l); 
+  struct mosquitto * mosq = mosquitto_new("cody-listener", 0, l); 
 
   if (mosq == NULL) 
     goto fail; 
