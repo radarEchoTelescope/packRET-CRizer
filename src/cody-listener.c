@@ -3,6 +3,7 @@
 #include "cody-listener.h" 
 #include "mosquitto.h"
 #include <stdio.h>
+#include <math.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h> 
@@ -10,6 +11,7 @@
 #include <unistd.h> 
 #include <sys/types.h>
 #include <fcntl.h> 
+
 
 
 #define NCODY 6
@@ -32,6 +34,8 @@ struct cody_listener
   DIR * emergency; 
   int emergency_dirfd; 
   int bufsize; 
+  pthread_mutex_t wait_mut; 
+  pthread_cond_t wait_cond; 
 }; 
 
 void msg_callback(struct mosquitto * mosq, void * unsafe_listener, const struct mosquitto_message *msg)
@@ -73,6 +77,7 @@ void msg_callback(struct mosquitto * mosq, void * unsafe_listener, const struct 
     return; 
   }
 
+  pthread_mutex_lock(&l->wait_mut); 
   pthread_mutex_lock(&l->buf_mutex[icody]); 
 
   //check if our buffer is full and write to emergency queue if it is 
@@ -138,6 +143,12 @@ void msg_callback(struct mosquitto * mosq, void * unsafe_listener, const struct 
   }
 
   pthread_mutex_unlock(&l->buf_mutex[icody]); 
+
+  //notify any waiters 
+  pthread_cond_broadcast(&l->wait_cond); 
+  pthread_mutex_unlock(&l->wait_mut); 
+
+
 }
 
 
@@ -176,6 +187,9 @@ cody_listener_t * cody_listener_init (const char * mqtt_host, int port, const ch
 
   l->mosq = mosq; 
   l->bufsize = Nbuf; 
+  pthread_mutex_init(&l->wait_mut, PTHREAD_MUTEX_DEFAULT); 
+  pthread_cond_init(&l->wait_cond, NULL); 
+
   if (emergency_queue) 
   {
 
@@ -208,6 +222,7 @@ cody_listener_t * cody_listener_init (const char * mqtt_host, int port, const ch
     goto fail; 
 
   mosquitto_message_callback_set(mosq, msg_callback); 
+  mosquitto_loop_start(mosq); 
  
   for (int i = 0; i < nsubs; i++) 
   {
@@ -253,7 +268,10 @@ void cody_listener_finish(cody_listener_t * l)
   if (!l) return; 
 
   if (l->mosq)
+  {
+    mosquitto_loop_stop(l->mosq,0); 
     mosquitto_destroy(l->mosq);
+  }
 
   for (int i = 0; i < 6; i++) 
   {
@@ -313,7 +331,7 @@ static int get_ith_filled_entry(uint8_t cody, cody_listener_t * l, int entry, in
   return -1; 
 }
 
-cody_data_t * cody_listener_get(cody_listener_t * l, uint8_t cody, uint32_t i) 
+const cody_data_t * cody_listener_get(cody_listener_t * l, uint8_t cody, uint32_t i) 
 {
   if (!l || cody < 1 || cody > 6 || !l->buf[cody-1]) return NULL; 
 
@@ -323,13 +341,72 @@ cody_data_t * cody_listener_get(cody_listener_t * l, uint8_t cody, uint32_t i)
   return &l->buf[cody-1][idx].cody_data; 
 }
 
-void cody_listener_release(cody_listener_t * l, uint8_t cody, uint32_t i) 
+int cody_listener_release(cody_listener_t * l, const cody_data_t * d)
 {
-  if (!l || cody < 1 || cody > 6 || !l->buf[cody-1]) return; 
+  if (!l || !d) return -1; 
 
-  pthread_mutex_lock(&l->buf_mutex[cody-1]); 
-  get_ith_filled_entry(cody,l,i,1); 
-  l->buf_rdy[cody-1]--; 
-  pthread_mutex_unlock(&l->buf_mutex[cody-1]); 
+  const struct cody_data_wrapper * dd = (const struct cody_data_wrapper*) (d - offsetof(struct cody_data_wrapper, cody_data)); 
+  //check to make sure we have a valid pointer 
+  int icody = -1; 
+  int i_idx = -1; 
+  for (int i = 0; i < NCODY; i++) 
+  {
+    if (!l->buf[i]) continue; 
+    int idx = dd-l->buf[i]; 
+
+    if ( idx >=0 && idx < l->bufsize)
+    {
+      icody = i; 
+      i_idx = idx; 
+      break;
+    }
+  }
+
+  if (icody == -1) return -1; 
+
+  pthread_mutex_lock(&l->buf_mutex[icody]); 
+  get_ith_filled_entry(icody,l,i_idx,1); 
+  l->buf_rdy[icody]--; 
+  pthread_mutex_unlock(&l->buf_mutex[icody]); 
+
+  return  0; 
 }
 
+
+
+int cody_listener_wait(cody_listener_t * l, float timeout) 
+{
+  pthread_mutex_lock(&l->wait_mut); 
+  for (int i= 0; i < NCODY; i++)
+  {
+    if (l->buf_rdy[i]) 
+    {
+      pthread_mutex_unlock(&l->wait_mut); 
+      return 1+i; 
+    }
+  }
+  if (timeout) 
+  {
+    struct timespec ts =  { .tv_sec = floor(timeout), .tv_nsec = 1e9*(timeout-floor(timeout)) };
+    pthread_cond_timedwait(&l->wait_cond, &l->wait_mut, &ts); 
+  }
+  else
+  {
+    pthread_cond_wait(&l->wait_cond, &l->wait_mut);
+  }
+
+  int ret =0;
+  for (int i= 0; i < NCODY; i++)
+  {
+    if (l->buf_rdy[i]) 
+    {
+      ret = 1+i; 
+      break; 
+    }
+  }
+ 
+
+  pthread_mutex_unlock(&l->wait_mut); 
+  return ret; 
+
+}
