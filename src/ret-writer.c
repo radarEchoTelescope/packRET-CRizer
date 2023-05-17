@@ -91,7 +91,7 @@ int ret_writer_write_event(ret_writer_t * w, const ret_full_event_t * ev)
       {
         ts_tar = ts_cody[i]; 
       }
-        ncody++; 
+      ncody++; 
     }
   }
 
@@ -117,7 +117,7 @@ int ret_writer_write_event(ret_writer_t * w, const ret_full_event_t * ev)
 
   TAR * tar; 
 
-  int ret = tar_open(&tar, w->buf, NULL, O_WRONLY, 0444,0); 
+  int ret = tar_open(&tar, w->buf, NULL, O_WRONLY | O_CREAT, 0644,0); 
 
   if (ret) return -1; 
 
@@ -126,7 +126,7 @@ int ret_writer_write_event(ret_writer_t * w, const ret_full_event_t * ev)
     gmtime_r(&ts_radar.tv_sec, &tm_time); 
     sprintf(w->buf,"RET.%04d%02d%02d.%02d%02d%02d.%09ld.RDR", 
         tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, 
-        tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts_tar.tv_nsec); 
+        tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts_radar.tv_nsec); 
     nw += tar_buf_write(tar, sizeof(*(ev->radar)), ev->radar, w->buf); 
   }
 
@@ -137,7 +137,7 @@ int ret_writer_write_event(ret_writer_t * w, const ret_full_event_t * ev)
       gmtime_r(&ts_cody[i].tv_sec, &tm_time); 
       sprintf(w->buf,"RET.%04d%02d%02d.%02d%02d%02d.%09ld.CDY%d", 
           tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, 
-          tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts_tar.tv_nsec, i+1); 
+          tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts_cody[i].tv_nsec, i+1); 
       nw += tar_buf_write(tar, sizeof(*ev->cody[i]), ev->cody[i], w->buf); 
     }
   }
@@ -148,3 +148,12 @@ int ret_writer_write_event(ret_writer_t * w, const ret_full_event_t * ev)
   return nw; 
 }
 
+void ret_writer_destroy(ret_writer_t *w) 
+{
+  if (w) 
+  {
+    free(w->buf); 
+    free(w->basedir); 
+    free(w); 
+  }
+}
