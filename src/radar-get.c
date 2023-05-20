@@ -1,6 +1,8 @@
+#define _GNU_SOURCE
 #include "radar.h" 
 #include <stdio.h> 
 #include <signal.h> 
+#include <time.h>
 #include <string.h> 
 #include <stdlib.h> 
 
@@ -11,6 +13,8 @@ int interrupt_gpio = 23;
 const char * ack_serial =  "/dev/serial/by-id/usb-Xilinx_JTAG+3Serial_68646-if02-port0"; 
 const char * gps_serial = "/dev/ttyAMA0"; 
 int N = -1; 
+const char * output_dir = NULL;
+char * output_name = NULL; 
 
 volatile int break_flag = 0; 
 
@@ -23,7 +27,7 @@ void sighandler(int sig)
 
 void usage() 
 {
-  fprintf(stderr, "radar-get [-h HOSTNAME=%s] [-i interrupt-gpio = %d] [-a ack_serial = %s ] [-g gps_serial = %s] [-N number = %d]\n",
+  fprintf(stderr, "radar-get [-h HOSTNAME=%s] [-i interrupt-gpio = %d] [-a ack_serial = %s ] [-g gps_serial = %s] [-N number = %d] [-o output_dir = (none)] \n",
       hostname, interrupt_gpio, ack_serial, gps_serial, N); 
   exit(1); 
 }
@@ -40,23 +44,31 @@ int main(int nargs, char ** args)
       hostname = args[++i]; 
     }
 
-    if (!strcmp(args[i],"-i"))
+    else if (!strcmp(args[i],"-i"))
     {
       interrupt_gpio = atoi(args[++i]); 
     }
 
-    if (!strcmp(args[i],"-a"))
+    else if (!strcmp(args[i],"-a"))
     {
       ack_serial = args[++i];
     }
 
-    if (!strcmp(args[i],"-g"))
+    else if (!strcmp(args[i],"-g"))
     {
       gps_serial = args[++i];
     }
-    if (!strcmp(args[i],"-N"))
+    else if (!strcmp(args[i],"-N"))
     {
       N = atoi(args[++i]);
+    }
+    else if (!strcmp(args[i],"-o"))
+    {
+      output_dir = args[++i]; 
+    }
+    else
+    {
+      usage(); 
     }
   }
 
@@ -81,6 +93,27 @@ int main(int nargs, char ** args)
       ret_radar_gps_tm_dump(stdout,&d.gps, 6); 
       printf("   }\n"); 
       nevents++; 
+      if (output_dir) 
+      {
+        struct timespec ts; 
+        ret_radar_fill_time(&d.gps, &ts); 
+        struct tm * gmt = gmtime(&ts.tv_sec); 
+
+        if (!output_name)
+        {
+          asprintf(&output_name,"%s/%d-%02d-%2d.%02d%02d%02d.%09ld.RAD", output_dir,
+              gmt->tm_year+1900, gmt->tm_mon+1, gmt->tm_mday, gmt->tm_hour, gmt->tm_min, gmt->tm_sec, ts.tv_nsec);
+        }
+        else
+        {
+          sprintf(output_name,"%s/%d-%02d-%2d.%02d%02d%02d.%09ld.RAD", output_dir,
+              gmt->tm_year+1900, gmt->tm_mon+1, gmt->tm_mday, gmt->tm_hour, gmt->tm_min, gmt->tm_sec, ts.tv_nsec);
+        }
+
+        FILE * f = fopen(output_name,"w"); 
+        fwrite(&d, sizeof(d), 1, f); 
+        fclose(f); 
+      }
     }
     if (break_flag) break; 
   }
