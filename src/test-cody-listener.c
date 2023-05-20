@@ -1,7 +1,9 @@
+#define _GNU_SOURCE
 #include <stdio.h> 
 #include <signal.h> 
 #include <time.h>
 #include "cody-listener.h" 
+#include <string.h>
 
 
 volatile int stop = 0; 
@@ -13,13 +15,17 @@ static void sighandler(int signum)
 }
 
 
+char * output_name = NULL; 
 
 
 
 int main(int nargs, char ** args) 
 {
 
-  const char * topic_string = nargs < 2 ? "test_topic/cody%d" : args[1]; 
+  const char * out_dir = nargs < 2 ? NULL : args[1]; 
+
+
+  const char * topic_string = nargs < 3 ? "test_topic/cody%d" : args[2]; 
 
   signal(SIGINT, sighandler); 
 
@@ -42,7 +48,22 @@ int main(int nargs, char ** args)
          struct timespec ts; 
          cody_data_fill_time(cody,&ts); 
          struct tm * gmt = gmtime(&ts.tv_sec); 
-         printf("%d-%02d-%02d-%02d:%02d:%02d.%09d\n", gmt->tm_year+1900, gmt->tm_mon+1, gmt->tm_mday, gmt->tm_hour, gmt->tm_min, gmt->tm_sec, ts.tv_nsec); 
+         printf("%d-%02d-%02d-%02d:%02d:%02d.%09ld\n", gmt->tm_year+1900, gmt->tm_mon+1, gmt->tm_mday, gmt->tm_hour, gmt->tm_min, gmt->tm_sec, ts.tv_nsec); 
+         if (out_dir) 
+         {
+           if (!output_name)
+           {
+             asprintf(&output_name,"%s/%d-%02d-%2d.%02d%02d%02d.%09ld.CDY%d", out_dir,
+                 gmt->tm_year+1900, gmt->tm_mon+1, gmt->tm_mday, gmt->tm_hour, gmt->tm_min, gmt->tm_sec, ts.tv_nsec, icody);
+           }
+           else
+           {
+             sprintf(output_name,"%s/%d-%02d-%2d.%02d%02d%02d.%09ld.CDY%d", out_dir,
+                 gmt->tm_year+1900, gmt->tm_mon+1, gmt->tm_mday, gmt->tm_hour, gmt->tm_min, gmt->tm_sec, ts.tv_nsec, icody);
+           }
+ 
+   
+         }
       //   cody_data_dump(stdout,cody,0); 
          cody_listener_release(l,cody); 
       }
