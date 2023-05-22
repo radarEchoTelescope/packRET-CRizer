@@ -157,8 +157,10 @@ int parse(int nargs, char ** args)
 
 
 // radar thread grabs radar events, puts them in a the radar buffer
-void * radar_thread(void*)  
+void * radar_thread(void* ignored)  
 {
+
+  (void) ignored; 
 
   while(!break_flag) 
   {
@@ -210,9 +212,10 @@ void * radar_thread(void*)
 }
 
 
-void * collect_and_write_thread(void*) 
+void * collect_and_write_thread(void* ignored) 
 {
 
+  (void) ignored; 
 
   while (!break_flag) 
   {
