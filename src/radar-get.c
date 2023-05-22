@@ -105,6 +105,7 @@ int main(int nargs, char ** args)
 
   ret_radar_t * radar = ret_radar_open(hostname, interrupt_gpio, ack_serial, gps_serial);
   ret_radar_set_verbose(radar,verbose); 
+  ret_radar_set_timeout(radar,1); 
 
   int nevents = 0; 
 
