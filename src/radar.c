@@ -277,7 +277,7 @@ void ret_radar_set_timeout(ret_radar_t * h, double t)
 
   if (h->verbose) 
   {
-
+    printf("Setting timeout to %f seconds\n", t); 
   }
 
   if ( (t > (1 << 31)) || t <=0 ) //infinite, or effectively so 
