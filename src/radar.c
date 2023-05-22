@@ -349,7 +349,9 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d)
     t.nwritten = 0; 
     //initialize the transfer
     //this is blocking. Maybe use non-blocking later so can read serial and gps timestamp at same time? 
+    if (h->verbose) printf("Calling curl easy perform\n"); 
     notok = curl_easy_perform(h->tftp_handle); 
+    if (h->verbose) printf("curl easy perform returned %d\n", notok); 
 
 
     if (notok || ret_radar_data_check_crc(&d->rfsoc))
