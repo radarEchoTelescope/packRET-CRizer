@@ -12,17 +12,34 @@
 
 struct ret_writer 
 {
-  char * buf; 
-  char * basedir; 
+  int noutputs; 
+  struct 
+  {
+    char * buf; 
+    char * basedir; 
+  } * outputs; 
+
 };
 
 
-ret_writer_t * ret_writer_init(const char * output_directory) 
+ret_writer_t * ret_writer_multi_init(int ndirs, const char * const *  output_directory) 
 {
   ret_writer_t * w = malloc(sizeof(ret_writer_t)); 
-  w->basedir = strdup(output_directory); 
-  w->buf = calloc(strlen(w->basedir) + 128,1); 
+
+  w->noutputs = ndirs; 
+  w->outputs = malloc(ndirs * sizeof(*w->outputs)); 
+
+  for (int i = 0; i < ndirs; i++) 
+  {
+    w->outputs[i].basedir = strdup(output_directory[i]); 
+    w->outputs[i].buf = calloc(strlen(w->outputs[i].basedir) + 256,1); 
+  }
   return w; 
+}
+
+ret_writer_t * ret_writer_init(const char * output_directory) 
+{
+  return ret_writer_multi_init(1,&output_directory); 
 }
 
 static int mkdir_if_needed(char * path)
@@ -65,6 +82,67 @@ static int mkdir_if_needed(char * path)
   return 0; 
 }
 
+int ret_writer_write_stag_cody(ret_writer_t *w, const cody_data_t* cody, int icody)
+{
+  if (!cody) return -1; 
+
+  struct timespec ts; 
+  cody_data_fill_time(cody,&ts); 
+  struct tm tm_time; 
+  gmtime_r(&ts.tv_sec, &tm_time); 
+
+
+  int ret = INT32_MIN; 
+  for (int i = 0; i < w->noutputs; i++) 
+  {
+    sprintf(w->outputs[i].buf,"%s/stag/CDY%d", w->outputs[i].basedir, icody); 
+    mkdir_if_needed(w->outputs[i].buf); 
+
+    sprintf(w->outputs[i].buf,"%s/stag/CDY%d/RET.%04d%02d%02d.%02d%02d%02d.%09ld.CDY%d", 
+      w->outputs[i].basedir,icody, 
+      tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, 
+      tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts.tv_nsec, icody); 
+
+    FILE * f = fopen(w->outputs[i].buf,"w"); 
+    if (!f) continue; 
+    int nw =  fwrite(cody,sizeof(*cody),1,f); 
+    fclose(f); 
+    if (nw > ret) ret = nw; 
+  }
+
+  return ret > 0 ? ret*((int)sizeof(*cody)) : (int) ret; 
+}
+
+int ret_writer_write_stag_radar(ret_writer_t * w, const ret_radar_data_t * rad) 
+{
+
+  if (!rad) return -1; 
+
+  struct timespec ts; 
+  ret_radar_fill_time(&rad->gps,&ts); 
+  struct tm tm_time; 
+  gmtime_r(&ts.tv_sec, &tm_time); 
+
+  int ret = INT32_MIN; 
+  for (int i = 0; i < w->noutputs; i++) 
+  {
+    sprintf(w->outputs[i].buf,"%s/stag/RDR", w->outputs[i].basedir); 
+    mkdir_if_needed(w->outputs[i].buf); 
+
+    sprintf(w->outputs[i].buf,"%s/stag/RDR/RET.%04d%02d%02d.%02d%02d%02d.%09ld.RDR",
+      w->outputs[i].basedir,
+      tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, 
+      tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts.tv_nsec); 
+
+    FILE * f = fopen(w->outputs[i].buf,"w"); 
+    if (!f) continue; 
+    int nw = fwrite(rad,sizeof(*rad),1,f); 
+    fclose(f); 
+    if (nw > ret) ret = nw; 
+  }
+  return ret > 0 ? ret*((int)sizeof(*rad)) : ret; 
+}
+
 
 int ret_writer_write_event(ret_writer_t * w, const ret_full_event_t * ev)
 {
@@ -103,57 +181,70 @@ int ret_writer_write_event(ret_writer_t * w, const ret_full_event_t * ev)
   //create directories is not alread there
   //
 
-  sprintf(w->buf,"%s/%d/%02d/%02d/%02d", w->basedir, tm_time.tm_year + 1900, 
-      tm_time.tm_mon+1, tm_time.tm_mday, tm_time.tm_hour); 
-  mkdir_if_needed(w->buf); 
- 
-  int nw = 0;
-  //tarname 
-  sprintf(w->buf,"%s/%d/%02d/%02d/%02d/RET.%04d%02d%02d.%02d%02d%02d.%09ld.tar", 
-      w->basedir, 
-      tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, tm_time.tm_hour, 
-      tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, 
-      tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts_tar.tv_nsec); 
+  int ret = INT32_MIN; 
 
-  TAR * tar; 
-
-  int ret = tar_open(&tar, w->buf, NULL, O_WRONLY | O_CREAT, 0644,0); 
-
-  if (ret) return -1; 
-
-  if (ev->radar) 
+  for (int o = 0; o < w->noutputs; o++) 
   {
-    gmtime_r(&ts_radar.tv_sec, &tm_time); 
-    sprintf(w->buf,"RET.%04d%02d%02d.%02d%02d%02d.%09ld.RDR", 
+
+    sprintf(w->outputs[o].buf,"%s/%d/%02d/%02d/%02d", w->outputs[o].basedir, tm_time.tm_year + 1900, 
+        tm_time.tm_mon+1, tm_time.tm_mday, tm_time.tm_hour); 
+    mkdir_if_needed(w->outputs[o].buf); 
+   
+    int nw = 0;
+    //tarname 
+    sprintf(w->outputs[o].buf,"%s/%d/%02d/%02d/%02d/RET.%04d%02d%02d.%02d%02d%02d.%09ld.tar", 
+        w->outputs[o].basedir, 
+        tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, tm_time.tm_hour, 
         tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, 
-        tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts_radar.tv_nsec); 
-    nw += tar_buf_write(tar, sizeof(*(ev->radar)), ev->radar, w->buf); 
-  }
+        tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts_tar.tv_nsec); 
 
-  for (int i = 0; i< 6; i++) 
-  {
-    if (ev->cody[i]) 
+    TAR * tar; 
+
+    int ret = tar_open(&tar, w->outputs[o].buf, NULL, O_WRONLY | O_CREAT, 0644,0); 
+
+    if (ret) 
     {
-      gmtime_r(&ts_cody[i].tv_sec, &tm_time); 
-      sprintf(w->buf,"RET.%04d%02d%02d.%02d%02d%02d.%09ld.CDY%d", 
-          tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, 
-          tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts_cody[i].tv_nsec, i+1); 
-      nw += tar_buf_write(tar, sizeof(*ev->cody[i]), ev->cody[i], w->buf); 
+      if (ret < 0) ret = -1; 
     }
+
+    if (ev->radar) 
+    {
+      gmtime_r(&ts_radar.tv_sec, &tm_time); 
+      sprintf(w->outputs[o].buf,"RET.%04d%02d%02d.%02d%02d%02d.%09ld.RDR", 
+          tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, 
+          tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts_radar.tv_nsec); 
+      nw += tar_buf_write(tar, sizeof(*(ev->radar)), ev->radar, w->outputs[o].buf); 
+    }
+
+    for (int i = 0; i< 6; i++) 
+    {
+      if (ev->cody[i]) 
+      {
+        gmtime_r(&ts_cody[i].tv_sec, &tm_time); 
+        sprintf(w->outputs[o].buf,"RET.%04d%02d%02d.%02d%02d%02d.%09ld.CDY%d", 
+            tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, 
+            tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts_cody[i].tv_nsec, i+1); 
+        nw += tar_buf_write(tar, sizeof(*ev->cody[i]), ev->cody[i], w->outputs[o].buf); 
+      }
+    }
+
+
+    tar_append_eof(tar); 
+    tar_close(tar); 
+    if (nw > ret) ret = nw; 
   }
-
-
-  tar_append_eof(tar); 
-  tar_close(tar); 
-  return nw; 
+  return ret; 
 }
 
 void ret_writer_destroy(ret_writer_t *w) 
 {
   if (w) 
   {
-    free(w->buf); 
-    free(w->basedir); 
+    for (int i = 0; i < w->noutputs; i++) 
+    {
+      free(w->outputs[i].buf); 
+      free(w->outputs[i].basedir); 
+    }
     free(w); 
   }
 }
