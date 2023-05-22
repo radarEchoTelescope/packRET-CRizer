@@ -303,7 +303,8 @@ static int do_poll(ret_radar_t * h)
   if (val == '1' ) return 1; 
 
   // is there a race condition here? if so we should probably poll in smaller increments... 
-  ppoll(&h->interrupt_fdset, 1, &h->timeout, 0); 
+  ppoll(&h->interrupt_fdset, 1, (h->timeout.tv_sec == 0 && h->timeout.tv_nsec ==0) ? NULL : &h->timeout, 0); 
+  if (h->verbose) printf("ppoll returned, val is %c\n", val); 
 
   lseek(h->int_fd,0,SEEK_SET); 
   read(h->int_fd, &val,1); 
