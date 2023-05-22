@@ -11,9 +11,9 @@ int main(int nargs, char ** args)
 
   fread(&data, sizeof(data),1,f); 
   printf("{\n  \"radar\"=\n"); 
-  ret_radar_rfsoc_dump(f, &data.rfsoc,4); 
+  ret_radar_rfsoc_dump(stdout, &data.rfsoc,4); 
   printf("\n  \"gps\"=\n");
-  ret_radar_gps_tm_dump(f, &data.gps,4); 
+  ret_radar_gps_tm_dump(stdout, &data.gps,4); 
   printf("\n}\n"); 
 
   fclose(f); 
