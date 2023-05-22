@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdatomic.h> 
 #include <pthread.h>
-#include <systemd/sd-daemon.h> 
 
 
 ret_radar_t * radar; 
@@ -281,7 +280,7 @@ void * collect_and_write_thread(void* ignored)
               if (age > max_age)
               {
                 fprintf(stderr,"Found unmatched event that is %f seconds older than the newest CODY event. Writing it out to stag folder.\n", age); 
-                ret_writer_write_stag_cody(writer, cody, icody+1); 
+                ret_writer_write_cody(writer, cody, icody+1); 
                 cody_listener_release(cody_list,cody); 
               }
             }
@@ -303,7 +302,7 @@ void * collect_and_write_thread(void* ignored)
              }
           };
 
-          ret_writer_write_event(writer, &full); 
+          ret_writer_write_full_event(writer, &full); 
 
           //now we can release everythig related to this event
           mark_free(i); 
@@ -359,7 +358,7 @@ int main(int nargs, char ** args)
     return 1; 
   }
 
-  writer = ret_writer_multi_init(noutdirs, outdirs); 
+  writer = ret_writer_multi_init(noutdirs, outdirs,0); 
   if (!writer) 
   {
     fprintf(stderr,"Could int initialize writer\n"); 

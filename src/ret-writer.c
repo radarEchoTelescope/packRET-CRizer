@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <time.h> 
 #include "tarbuf.h" 
+#include <zlib.h> 
 
 
 
@@ -19,10 +20,11 @@ struct ret_writer
     char * basedir; 
   } * outputs; 
 
+  int compress; 
 };
 
 
-ret_writer_t * ret_writer_multi_init(int ndirs, const char * const *  output_directory) 
+ret_writer_t * ret_writer_multi_init(int ndirs, const char * const *  output_directory, int compress) 
 {
   ret_writer_t * w = malloc(sizeof(ret_writer_t)); 
 
@@ -34,12 +36,13 @@ ret_writer_t * ret_writer_multi_init(int ndirs, const char * const *  output_dir
     w->outputs[i].basedir = strdup(output_directory[i]); 
     w->outputs[i].buf = calloc(strlen(w->outputs[i].basedir) + 256,1); 
   }
+  w->compress = compress;
   return w; 
 }
 
-ret_writer_t * ret_writer_init(const char * output_directory) 
+ret_writer_t * ret_writer_init(const char * output_directory, int compress) 
 {
-  return ret_writer_multi_init(1,&output_directory); 
+  return ret_writer_multi_init(1,&output_directory, compress); 
 }
 
 static int mkdir_if_needed(char * path)
@@ -82,7 +85,28 @@ static int mkdir_if_needed(char * path)
   return 0; 
 }
 
-int ret_writer_write_stag_cody(ret_writer_t *w, const cody_data_t* cody, int icody)
+static int do_write(const char * where, size_t howbig,  const void * what, int compress) 
+{
+
+  if (!compress) 
+  {
+    FILE * f = fopen(where,"w"); 
+    if (!f) return -1; 
+    
+    int nw = fwrite(what, howbig,1,f); 
+    fclose(f); 
+    return nw;
+  }
+
+  gzFile gz = gzopen(where,"w"); 
+  if (!gz) return -1; 
+  gzsetparams(gz, 3, Z_FILTERED); 
+  int nw = gzwrite(gz, what,howbig); 
+  gzclose(gz); 
+  return nw; 
+}
+
+int ret_writer_write_cody(ret_writer_t *w, const cody_data_t* cody, int icody)
 {
   if (!cody) return -1; 
 
@@ -95,25 +119,24 @@ int ret_writer_write_stag_cody(ret_writer_t *w, const cody_data_t* cody, int ico
   int ret = INT32_MIN; 
   for (int i = 0; i < w->noutputs; i++) 
   {
-    sprintf(w->outputs[i].buf,"%s/stag/CDY%d", w->outputs[i].basedir, icody); 
+    sprintf(w->outputs[i].buf,"%s/CDY%d/%d/%02d/%02d/%02d", w->outputs[i].basedir, icody,
+    tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, tm_time.tm_hour); 
     mkdir_if_needed(w->outputs[i].buf); 
 
-    sprintf(w->outputs[i].buf,"%s/stag/CDY%d/RET.%04d%02d%02d.%02d%02d%02d.%09ld.CDY%d", 
+    sprintf(w->outputs[i].buf,"%s/CDY%d/%d/%02d/%02d/%02d/RET.%04d%02d%02d.%02d%02d%02d.%09ld.CDY%d", 
       w->outputs[i].basedir,icody, 
+      tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, tm_time.tm_hour,
       tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, 
       tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts.tv_nsec, icody); 
 
-    FILE * f = fopen(w->outputs[i].buf,"w"); 
-    if (!f) continue; 
-    int nw =  fwrite(cody,sizeof(*cody),1,f); 
-    fclose(f); 
+    int nw = do_write(w->outputs[i].buf,sizeof(*cody), cody, w->compress); 
     if (nw > ret) ret = nw; 
   }
 
   return ret > 0 ? ret*((int)sizeof(*cody)) : (int) ret; 
 }
 
-int ret_writer_write_stag_radar(ret_writer_t * w, const ret_radar_data_t * rad) 
+int ret_writer_write_radar(ret_writer_t * w, const ret_radar_data_t * rad) 
 {
 
   if (!rad) return -1; 
@@ -126,25 +149,25 @@ int ret_writer_write_stag_radar(ret_writer_t * w, const ret_radar_data_t * rad)
   int ret = INT32_MIN; 
   for (int i = 0; i < w->noutputs; i++) 
   {
-    sprintf(w->outputs[i].buf,"%s/stag/RDR", w->outputs[i].basedir); 
+    sprintf(w->outputs[i].buf,"%s/RDR/%d/%02d/%02d/%02d", w->outputs[i].basedir,
+        tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, tm_time.tm_hour); 
     mkdir_if_needed(w->outputs[i].buf); 
-
-    sprintf(w->outputs[i].buf,"%s/stag/RDR/RET.%04d%02d%02d.%02d%02d%02d.%09ld.RDR",
+ 
+    sprintf(w->outputs[i].buf,"%s/RDR/%d/%02d/%02d/%02d/RET.%04d%02d%02d.%02d%02d%02d.%09ld.RDR",
       w->outputs[i].basedir,
+      tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, tm_time.tm_hour,
       tm_time.tm_year + 1900, tm_time.tm_mon+1, tm_time.tm_mday, 
       tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, ts.tv_nsec); 
 
-    FILE * f = fopen(w->outputs[i].buf,"w"); 
-    if (!f) continue; 
-    int nw = fwrite(rad,sizeof(*rad),1,f); 
-    fclose(f); 
+    int nw = do_write(w->outputs[i].buf,sizeof(*rad), rad, w->compress);
     if (nw > ret) ret = nw; 
   }
   return ret > 0 ? ret*((int)sizeof(*rad)) : ret; 
 }
 
 
-int ret_writer_write_event(ret_writer_t * w, const ret_full_event_t * ev)
+//todo implement tar compression 
+int ret_writer_write_full_event(ret_writer_t * w, const ret_full_event_t * ev)
 {
 
   if (!w) return -1; 

@@ -1,7 +1,7 @@
 BUILD_DIR=build
 CFLAGS=-Og -fPIC -Wall -Wextra -g -std=gnu11 -I./src -I/usr/include/libiberty 
 LDFLAGS=-shared  -lpthread
-LIBS=-lcurl -liberty -lm -ltar -lmosquitto -lsystemd 
+LIBS=-lcurl -liberty -lm -ltar -lmosquitto -lsystemd -lz 
 INCLUDES=src/radar.h
 
 .PHONY: radar  clean

@@ -17,16 +17,16 @@ typedef struct ret_full_event
 
 
 //Initialize writer to output directory
-ret_writer_t * ret_writer_init(const char * output_directory); 
+ret_writer_t * ret_writer_init(const char * output_directory, int compress); 
 //Initialize a writer that will write to multiple output directories (if they're available) 
-ret_writer_t * ret_writer_multi_init (int ndirs, const char * const * output_directories); 
+ret_writer_t * ret_writer_multi_init (int ndirs, const char * const * output_directories, int compress); 
 
 // write radar and cody data. It's ok if some of them are NULL, but if all are NULL nothing will happen 
-int ret_writer_write_event(ret_writer_t * w, const ret_full_event_t *ev); 
+int ret_writer_write_full_event(ret_writer_t * w, const ret_full_event_t *ev); 
 void ret_writer_destroy(ret_writer_t * w); 
 
-int ret_writer_write_stag_cody(ret_writer_t *w, const cody_data_t * cody, int icody); 
-int ret_writer_write_stag_radar(ret_writer_t *w, const ret_radar_data_t * rad); 
+int ret_writer_write_cody(ret_writer_t *w, const cody_data_t * cody, int icody); 
+int ret_writer_write_radar(ret_writer_t *w, const ret_radar_data_t * rad); 
 
 // reads a tar file into a ret_full_event_t
 // if any of the pointers within the event are NULL, this will allocate them. Otherwise will reuse them. 
