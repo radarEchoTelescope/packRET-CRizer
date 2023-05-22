@@ -10,8 +10,8 @@ typedef struct ret_radar_data ret_radar_data_t;
 // a full event, this is what is written or read... 
 typedef struct ret_full_event
 {
-  ret_radar_data_t * radar; //radar data, can be NULL
-  cody_data_t * cody[6];  //cody data, can be NULL 
+  const ret_radar_data_t * radar; //radar data, can be NULL
+  const cody_data_t * cody[6];  //cody data, can be NULL 
 } ret_full_event_t; ; 
 
 
