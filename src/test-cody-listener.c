@@ -15,17 +15,20 @@ static void sighandler(int signum)
 }
 
 
+//todo, be less dumb 
 char * output_name = NULL; 
+char * output_name2 = NULL; 
 
 
 
 int main(int nargs, char ** args) 
 {
 
-  const char * out_dir = nargs < 2 ? NULL : args[1]; 
+  const char * out_dir = nargs < 3 ? NULL : args[2]; 
+  const char * out_dir2 = nargs < 4 ? NULL : args[3]; 
 
 
-  const char * topic_string = nargs < 3 ? "test_topic/cody%d" : args[2]; 
+  const char * topic_string = nargs < 2 ? "test_topic/cody%d" : args[1]; 
 
   signal(SIGINT, sighandler); 
 
@@ -62,8 +65,23 @@ int main(int nargs, char ** args)
                  gmt->tm_year+1900, gmt->tm_mon+1, gmt->tm_mday, gmt->tm_hour, gmt->tm_min, gmt->tm_sec, ts.tv_nsec, icody);
            }
  
-   
          }
+         if (out_dir2) 
+         {
+           if (!output_name2)
+           {
+             asprintf(&output_name2,"%s/%d-%02d-%2d.%02d%02d%02d.%09ld.CDY%d", out_dir2,
+                 gmt->tm_year+1900, gmt->tm_mon+1, gmt->tm_mday, gmt->tm_hour, gmt->tm_min, gmt->tm_sec, ts.tv_nsec, icody);
+           }
+           else
+           {
+             sprintf(output_name2,"%s/%d-%02d-%2d.%02d%02d%02d.%09ld.CDY%d", out_dir2,
+                 gmt->tm_year+1900, gmt->tm_mon+1, gmt->tm_mday, gmt->tm_hour, gmt->tm_min, gmt->tm_sec, ts.tv_nsec, icody);
+           }
+         }
+
+
+
       //   cody_data_dump(stdout,cody,0); 
          cody_listener_release(l,cody); 
       }
