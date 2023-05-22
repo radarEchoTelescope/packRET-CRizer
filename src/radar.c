@@ -218,6 +218,7 @@ struct ret_radar
   int ack_fd; 
   int gps_fd; 
   struct timespec timeout; 
+  int verbose; 
 };
 
 
@@ -262,9 +263,22 @@ ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio,
 }
 
 
+void ret_radar_set_verbose(ret_radar_t *h, int v) 
+{
+  if (!h) return;
+  if (h->verbose) printf("Setting verbose to %d\n", v); 
+  h->verbose = v; 
+  if (h->verbose) printf("Verbose is now %d\n", v); 
+
+}
 void ret_radar_set_timeout(ret_radar_t * h, double t) 
 {
   if (!h) return; 
+
+  if (h->verbose) 
+  {
+
+  }
 
   if ( (t > (1 << 31)) || t <=0 ) //infinite, or effectively so 
   {                               
@@ -285,6 +299,7 @@ static int do_poll(ret_radar_t * h)
   char val; 
   lseek(h->int_fd, 0, SEEK_SET); 
   read(h->int_fd, &val,1); 
+  if (h->verbose) printf("Inside do_poll, at beginning val is %c\n",val); 
   if (val == '1' ) return 1; 
 
   // is there a race condition here? if so we should probably poll in smaller increments... 

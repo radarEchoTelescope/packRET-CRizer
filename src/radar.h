@@ -79,6 +79,7 @@ ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio, const cha
 
 // set the read timeout (in seconds). 0 for none (default)
 void ret_radar_set_timeout(ret_radar_t * h, double timeout) ;
+void ret_radar_set_verbose(ret_radar_t *h, int verbose); 
 
 // poll for the next event, filling it 
 // returns 0 if successful, -1 if timeout exceeded or another error. 

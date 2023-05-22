@@ -16,6 +16,7 @@ const char * ack_serial =  "/dev/serial/by-id/usb-Xilinx_JTAG+3Serial_68646-if02
 const char * gps_serial = "/dev/ttyAMA0"; 
 int N = -1; 
 int compress = 0;
+int verbose = 0; 
 
 int noutput_dirs = 0;
 const char * output_dir[16] = {0};
@@ -31,7 +32,7 @@ void sighandler(int sig)
 
 void usage() 
 {
-  fprintf(stderr, "radar-get [-h HOSTNAME=%s] [-i interrupt-gpio = %d] [-a ack_serial = %s ] [-g gps_serial = %s] [-N number = %d] [-o output_dir =(none)] [-o additional_output_dir=(none)] [-z]\n",
+  fprintf(stderr, "radar-get [-h HOSTNAME=%s] [-i interrupt-gpio = %d] [-a ack_serial = %s ] [-g gps_serial = %s] [-N number = %d] [-o output_dir =(none)] [-o additional_output_dir=(none)] [-z] [-V]\n",
       hostname, interrupt_gpio, ack_serial, gps_serial, N); 
   exit(1); 
 }
@@ -47,6 +48,14 @@ int main(int nargs, char ** args)
       compress = 1; 
       continue; 
     }
+
+    if (!strcmp(args[i],"-V"))
+    {
+      verbose = 1; 
+      continue; 
+    }
+
+
 
     if (i == nargs -1) usage(); 
 
@@ -95,6 +104,7 @@ int main(int nargs, char ** args)
   signal(SIGINT, sighandler); 
 
   ret_radar_t * radar = ret_radar_open(hostname, interrupt_gpio, ack_serial, gps_serial);
+  ret_radar_set_verbose(radar,verbose); 
 
   int nevents = 0; 
 
