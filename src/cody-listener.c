@@ -90,7 +90,7 @@ void msg_callback(struct mosquitto * mosq, void * unsafe_listener, const struct 
       char queue_name[128]; 
       struct timespec t; 
       cody_data_fill_time(cody, &t); 
-      sprintf(queue_name,"CODY%d_%jd.%09d.dat\n", icody+1, t.tv_sec, (int) t.tv_nsec); 
+      sprintf(queue_name,"CODY%d_%ld.%09d.dat\n", icody+1, t.tv_sec, (int) t.tv_nsec); 
       int efd = openat(l->emergency_dirfd, queue_name, O_CREAT | O_RDWR, S_IRUSR | S_IRGRP | S_IROTH); 
 
       if (!efd) 
