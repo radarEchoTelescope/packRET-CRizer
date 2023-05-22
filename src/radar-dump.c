@@ -1,24 +1,28 @@
 #include "radar.h" 
 #include <stdio.h> 
+#include <zlib.h> 
 
 
 static ret_radar_data_t data; 
 int main(int nargs, char ** args) 
 {
 
-  if (nargs <2) return 1; 
 
+  printf("{\n  \"events\": [\n"); 
 
-  FILE * f = fopen(args[1],"r"); 
+  for (int i = 1; i<nargs; i++) 
+  {
+    gzFile f = gzopen(args[i],"r"); 
+    gzread(f, &data, sizeof(data)); 
+    printf("  {\n     \"radar\":\n"); 
+    ret_radar_rfsoc_dump(stdout, &data.rfsoc,6); 
+    printf(",\n     \"gps\":\n");
+    ret_radar_gps_tm_dump(stdout, &data.gps,6); 
+    printf("\n  },\n"); 
 
-  fread(&data, sizeof(data),1,f); 
-  printf("{\n  \"radar\":\n"); 
-  ret_radar_rfsoc_dump(stdout, &data.rfsoc,4); 
-  printf(",\n  \"gps\":\n");
-  ret_radar_gps_tm_dump(stdout, &data.gps,4); 
-  printf("\n}\n"); 
-
-  fclose(f); 
+    gzclose(f); 
+  }
+  printf("  ]\n}\n"); 
   return 0;
 
 }
