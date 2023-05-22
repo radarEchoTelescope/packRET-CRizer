@@ -32,6 +32,15 @@ struct timespec radar_buf_read_times[RADAR_BUF_SIZE];
 volatile atomic_size_t radar_buf_free = RADAR_BUF_SIZE; 
 pthread_mutex_t radar_buf_lock = PTHREAD_MUTEX_INITIALIZER;  
 
+
+static void mark_free(int i) 
+{
+   pthread_mutex_lock(&radar_buf_lock); 
+   memset(&radar_buf_read_times[i],0,sizeof(struct timespec)); 
+   radar_buf_free++; 
+   pthread_mutex_unlock(&radar_buf_lock); 
+}
+
 //store matches for each radar 
 struct 
 {
@@ -81,7 +90,8 @@ void usage()
 {
   fprintf(stderr, "packetizer [-H RFSOC_HOSTNAME=%s] [-i rfsoc-interrupt-gpio = %d] [-a rfsoc_ack_serial = %s ]\n", rfsoc_hostname, interrupt_gpio, ack_serial);
   fprintf(stderr, "           [-g rfsoc_gps_serial = %s] [-M mosquitto host = %s] [-C CODY_MASK = 0x%hhx]\n", gps_serial, mosquitto_host, cody_mask); 
-  fprintf(stderr,"            [-p mosquitto-port= %d] [-o0 outdir=%s] [-o1 outdir2 = %s ][-t topicname = %s]\n", mosquitto_port, outdirs[0], outdirs[1],topicname); 
+  fprintf(stderr, "           [-p mosquitto-port= %d] [-o0 outdir=%s] [-o1 outdir2 = %s (you can specify up to 16 outputs)][-t topicname = %s]\n", mosquitto_port, outdirs[0], outdirs[1],topicname); 
+  fprintf(stderr, "           [-A max_age = %f]\n", max_age);
 }
 
 
@@ -213,11 +223,13 @@ void * collect_and_write_thread(void*)
     {
       //retrieve the ones that are filled.
       static uint8_t filled_entries[RADAR_BUF_SIZE] = {0}; 
+      struct timespec newest_radar_copy;
       pthread_mutex_lock(&radar_buf_lock); 
       for (size_t i = 0; i < RADAR_BUF_SIZE; i++)
       {
         filled_entries[i] = !!radar_buf_read_times[i].tv_sec; 
       }
+      newest_radar_copy = newest_radar; 
       pthread_mutex_unlock(&radar_buf_lock); 
 
       //now go through the codies in our mask 
@@ -274,7 +286,7 @@ void * collect_and_write_thread(void*)
         }
 
         //see if we have a complete match, or if we need to max_age...  
-        if (matches[i].ncodies == ncody)//huzzah! 
+        if (matches[i].ncodies == ncody || delta_time(&newest_radar_copy,&radar_buf_read_times[i]) > max_age)
         {
           ret_full_event_t full = {
             .radar = &radar_buf[i], 
@@ -291,10 +303,21 @@ void * collect_and_write_thread(void*)
           ret_writer_write_event(writer, &full); 
 
           //now we can release everythig related to this event
+          mark_free(i); 
+          for (int icody = 0; icody < 6; icody++) 
+          {
+            if (matches[i].cody[icody])
+            {
+              cody_listener_release(cody_list,matches[i].cody[icody]); 
+              matches[i].cody[icody] = NULL; 
+            }
+          }
         }
-
-
       }
+    }
+    else
+    {
+      usleep(500); 
     }
   }
 
