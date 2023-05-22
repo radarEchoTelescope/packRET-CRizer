@@ -10,9 +10,9 @@ int main(int nargs, char ** args)
   FILE * f = fopen(args[1],"r"); 
 
   fread(&data, sizeof(data),1,f); 
-  printf("{\n  \"radar\"=\n"); 
+  printf("{\n  \"radar\":\n"); 
   ret_radar_rfsoc_dump(stdout, &data.rfsoc,4); 
-  printf("\n  \"gps\"=\n");
+  printf("\n  \"gps\":\n");
   ret_radar_gps_tm_dump(stdout, &data.gps,4); 
   printf("\n}\n"); 
 
