@@ -6,7 +6,7 @@
 typedef struct cody_listener cody_listener_t;
 
 /** Initialize a cody listener listening to packets from the given mqtt_host on the given port.
- * Topic format string is something with a %d in it (only one % is allowed and it must be %d), and cody_mask is a mask of cody stations (1-indexed) to subscribe to. 
+ * Topic format string is something with a %d in it (only one % is allowed and it must be %d), and cody_mask is a mask of cody stations to subscribe to. 
  * To subscribe to all 6 nominal stations, pass a mask of 0x3f (or... '?' if you want to be cute).  
  * Nbuf is how many CODY messages to make room for per station. 
  * emerquency_queue, if not null, is a directory where messages that would not fit in our receive buffer are written... 
@@ -21,10 +21,10 @@ cody_listener_t * cody_listener_init(const char * mqtt_host,
 
 
 
-//Return the number of ready events at this moment for the specified cody. Note that this is 1-indexed. 
+//Return the number of ready events at this moment for the specified cody. This is 1-indexed...  because when we write them out they are 1-6 
 int cody_listener_nrdy(cody_listener_t * l, uint8_t cody); 
 //Grab  the data corresponding to the ith available event for this cody. Note that what the ith event is can change between calls
-//even without you having done anything, so don't make multiple calla ssuming you always get the same thing. Note that this is 1 indexed.
+//even without you having done anything, so don't make multiple callassuming you always get the same thing. Note that this is 1 indexed for the cody but not i
 const cody_data_t * cody_listener_get(cody_listener_t *l, uint8_t cody, uint32_t i); 
 
 /** Release data associated with this pointer, allowing it to be reused later */ 
