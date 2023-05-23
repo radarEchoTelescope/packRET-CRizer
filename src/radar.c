@@ -501,6 +501,8 @@ int ret_radar_hk_fill(ret_radar_hk_t * h, ret_radar_hk_data_t *hk)
 
   static uint8_t ask[4] = { 0x44,0,0,0}; 
   uint8_t resp[9] = {0}; 
+  //flush the port first
+  tcflush(h->hk_fd, TCIFLUSH); 
 
   if (sizeof(ask) != write(h->hk_fd, ask,sizeof(ask))) return -1; 
   size_t rd = 0; 
