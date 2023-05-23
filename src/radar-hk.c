@@ -24,7 +24,7 @@ int main(int nargs, char ** args)
   ret_radar_hk_fill(hk,&data); 
   time_t now = time(0); 
   struct tm * gmt = gmtime(&now); 
-  printf("==========At %s=============\n", asctime(gmt)); 
+  printf(":::At %s", asctime(gmt)); 
   printf("Board Temperature: %f\n", data.board_temp); 
   printf("Air Temperature: %f\n", data.air_temp); 
   printf("Vin: %f\n", data.vin); 

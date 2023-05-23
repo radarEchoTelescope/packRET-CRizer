@@ -500,7 +500,7 @@ int ret_radar_hk_fill(ret_radar_hk_t * h, ret_radar_hk_data_t *hk)
   if (!h || h->hk_fd <0) return -1; 
 
   static uint8_t ask[4] = { 0x44,0,0,0}; 
-  uint8_t resp[8] = {0}; 
+  uint8_t resp[9] = {0}; 
 
   if (sizeof(ask) != write(h->hk_fd, ask,sizeof(ask))) return -1; 
   size_t rd = 0; 
@@ -511,9 +511,9 @@ int ret_radar_hk_fill(ret_radar_hk_t * h, ret_radar_hk_data_t *hk)
     rd += this_rd; 
   }
 
-  hk->board_temp = 0.0625 * ( resp[0] + (((int)resp[1]) <<8)); 
-  hk->air_temp = -256 + (1/32.) * ( resp[2] + (((int)resp[3]) <<8)); 
-  hk->vin = 0.0515325 * ( resp[4] + (((int)resp[5]) <<8)); 
+  hk->board_temp = 0.0625 * ( resp[1] + (((int)resp[2]) <<8)); 
+  hk->air_temp = -256 + (1/32.) * ( resp[3] + (((int)resp[4]) <<8)); 
+  hk->vin = 0.0515325 * ( resp[5] + (((int)resp[6]) <<8)); 
 
   return 0; 
 }
