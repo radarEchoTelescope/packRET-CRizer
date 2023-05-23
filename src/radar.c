@@ -222,6 +222,37 @@ struct ret_radar
 };
 
 
+struct ret_radar_hk
+{
+  int hk_fd; 
+};
+
+
+ret_radar_hk_t * ret_radar_hk_open(const char * hk_serial)
+{
+  int hk_fd = 0; 
+  if (hk_serial) 
+  {
+    hk_fd = setup_serial(hk_serial,9600); 
+  }
+
+  if (hk_fd >=0) 
+  {
+    ret_radar_hk_t * h = malloc(sizeof(ret_radar_hk_t)); 
+    h->hk_fd = hk_fd; 
+    return h; 
+  }
+  return 0; 
+}
+
+
+void ret_radar_hk_close(ret_radar_hk_t * h) 
+{
+  if (!h) return; 
+
+  if (h->hk_fd > 0) close(h->hk_fd); 
+  free(h); 
+}
 
 ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio,
                              const char* ack_serial, const char * gps_serial) 
@@ -234,7 +265,7 @@ ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio,
   int gpio_fd = setup_int_gpio(interrupt_gpio); 
   if (gpio_fd <=0) return NULL; 
 
-  int ack_fd = setup_serial(ack_serial, 115200); 
+  int ack_fd = ack_serial ? setup_serial(ack_serial, 115200) : 0; 
   if (ack_fd <=0)
   {
     fprintf(stderr,"Running without ack? Is that what you want?\n"); 
@@ -242,6 +273,7 @@ ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio,
 
   int gps_fd = setup_serial(gps_serial, 115200); 
   if (gps_fd <=0) return NULL; 
+
 
   // we got everything open 
   ret_radar_t * ret = calloc(1,sizeof(*ret)); 
@@ -459,6 +491,29 @@ int ret_radar_fill_time(const ret_radar_gps_tm_t *g, struct timespec *t)
 
   t->tv_sec = utc_secs; 
   t->tv_nsec = nsecs; 
+
+  return 0; 
+}
+
+int ret_radar_hk_fill(ret_radar_hk_t * h, ret_radar_hk_data_t *hk) 
+{
+  if (!h || h->hk_fd <0) return -1; 
+
+  static uint8_t ask[4] = { 0x44,0,0,0}; 
+  uint8_t resp[8] = {0}; 
+
+  if (sizeof(ask) != write(h->hk_fd, ask,sizeof(ask))) return -1; 
+  size_t rd = 0; 
+  while (rd < sizeof(resp))
+  {
+    int this_rd = read(h->hk_fd,resp,sizeof(resp)-rd); 
+    if (this_rd < 0) return 0; 
+    rd += this_rd; 
+  }
+
+  hk->board_temp = 0.0625 * ( resp[0] + (((int)resp[1]) <<8)); 
+  hk->air_temp = -256 + (1/32.) * ( resp[2] + (((int)resp[3]) <<8)); 
+  hk->vin = 0.0515325 * ( resp[4] + (((int)resp[5]) <<8)); 
 
   return 0; 
 }

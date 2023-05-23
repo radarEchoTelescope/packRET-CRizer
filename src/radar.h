@@ -6,6 +6,7 @@
 #include <time.h> 
 
 typedef struct ret_radar ret_radar_t; 
+typedef struct ret_radar_hk ret_radar_hk_t; 
 
 typedef struct ret_radar_gps_tm 
 {
@@ -34,7 +35,7 @@ typedef struct ret_radar_gps_tm
 #define s16 int16_t
 #endif
 
-typedef struct ret_radar_rfssoc_data {
+typedef struct ret_radar_rfsoc_data {
   u32 crc32;
   u32 index;
   u32 struct_version;
@@ -69,6 +70,13 @@ typedef struct ret_radar_data
   ret_radar_gps_tm_t gps; 
 } ret_radar_data_t; 
 
+typedef struct ret_radar_hk_data
+{
+  float board_temp; 
+  float air_temp; 
+  float vin; 
+} ret_radar_hk_data_t; 
+
 // open a handle 
 //   hostname is the hostname to connect to 
 //   interrupt_gpio is the gpio number for the interrupt 
@@ -76,6 +84,9 @@ typedef struct ret_radar_data
 //   gps_serial is the serial device to get GPS time marks from 
 
 ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio, const char* ack_serial, const char * gps_serial); 
+
+// open a handle for reading housekeeping (this would generally be asynchronous from events) 
+ret_radar_hk_t * ret_radar_hk_open(const char * hk_serial);
 
 // set the read timeout (in seconds). 0 for none (default)
 void ret_radar_set_timeout(ret_radar_t * h, double timeout) ;
@@ -93,8 +104,11 @@ int ret_radar_rfsoc_dump(FILE *f , const ret_radar_rfsoc_data_t * data, int inde
 int ret_radar_gps_tm_dump(FILE *, const ret_radar_gps_tm_t * data, int indent); 
 int ret_radar_fill_time(const ret_radar_gps_tm_t *g, struct timespec *t); 
 
+int ret_radar_hk_fill(ret_radar_hk_t  * h, ret_radar_hk_data_t * hk); 
+
 //close handle
 void ret_radar_close(ret_radar_t *h ); 
+void ret_radar_hk_close(ret_radar_hk_t *h ); 
 
 
 
