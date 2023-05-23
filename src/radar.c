@@ -506,7 +506,7 @@ int ret_radar_hk_fill(ret_radar_hk_t * h, ret_radar_hk_data_t *hk)
   size_t rd = 0; 
   while (rd < sizeof(resp))
   {
-    int this_rd = read(h->hk_fd,resp,sizeof(resp)-rd); 
+    int this_rd = read(h->hk_fd,resp+rd,sizeof(resp)-rd); 
     if (this_rd < 0) return 0; 
     rd += this_rd; 
   }
