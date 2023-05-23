@@ -418,6 +418,7 @@ void ret_radar_close(ret_radar_t * h)
   free(h); 
 }
 
+#define dump_end() nwr += fprintf(f,"%*s  \"end\": 1\n", indent, " ")
 #define dump_u32(x) nwr += fprintf(f,"%*s  \"" #x "\": %u,\n", indent, " ", data->x) 
 #define dump_u64(x) nwr += fprintf(f,"%*s  \"" #x "\": %"PRIu64",\n", indent, " ", data->x) 
 #define dump_u16(x) nwr += fprintf(f,"%*s  \"" #x "\": %hu,\n", indent, " ", data->x) 
@@ -455,6 +456,8 @@ int ret_radar_rfsoc_dump(FILE *f, const ret_radar_rfsoc_data_t *data, int indent
   dump_arr(adc_1_data,"%hd",16384);
   dump_arr(adc_2_data,"%hd",16384);
   dump_arr(adc_3_data,"%hd",16384);
+  dump_end(); 
+
   nwr += fprintf(f,"%*s}\n", indent, " "); 
   return nwr;
 }
@@ -469,6 +472,9 @@ int ret_radar_gps_tm_dump(FILE * f, const ret_radar_gps_tm_t * data, int indent)
   dump_u32(tow); 
   dump_u32(tow_f); 
   dump_u32(acc); 
+  struct timespec ts; 
+  ret_radar_fill_time(data,&ts); 
+  nwr += fprintf(f,"%*s  \"utctime\":%ld.%09ld\n", indent, " ", ts.tv_sec, ts.tv_nsec); 
   nwr += fprintf(f,"%*s}\n", indent, " "); 
   return nwr; 
 }
