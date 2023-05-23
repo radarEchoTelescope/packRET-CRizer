@@ -44,7 +44,7 @@ int main(int nargs, char ** args)
   }
 
   ret_full_event_t ev = {.radar = &radar, .cody = { &cody[0], &cody[1], &cody[2], &cody[3], &cody[4], &cody[5]}}; 
-  ret_writer_t *w = ret_writer_multi_init(noutputs, outdirs); 
+  ret_writer_t *w = ret_writer_multi_init(noutputs, outdirs,1); 
   ret_writer_write_event(w,&ev); 
   ret_writer_destroy(w); 
 

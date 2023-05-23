@@ -1,13 +1,16 @@
 #include "ret-writer.h"
-#include <libtar.h> 
-#include "cody.h"
+//#include "cody.h"
 #include "radar.h" 
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h> 
+#ifdef WITH_LIBTAR
 #include "tarbuf.h" 
+#include <libtar.h> 
+#endif
 #include <zlib.h> 
+#include <sys/stat.h>
 
 
 
@@ -106,6 +109,7 @@ static int do_write(const char * where, size_t howbig,  const void * what, int c
   return nw; 
 }
 
+/*
 int ret_writer_write_cody(ret_writer_t *w, const cody_data_t* cody, int icody)
 {
   if (!cody) return -1; 
@@ -135,6 +139,7 @@ int ret_writer_write_cody(ret_writer_t *w, const cody_data_t* cody, int icody)
 
   return ret > 0 ? ret*((int)sizeof(*cody)) : (int) ret; 
 }
+*/
 
 int ret_writer_write_radar(ret_writer_t * w, const ret_radar_data_t * rad) 
 {
@@ -166,6 +171,7 @@ int ret_writer_write_radar(ret_writer_t * w, const ret_radar_data_t * rad)
 }
 
 
+#ifdef WITH_LIBTAR
 //todo implement tar compression 
 int ret_writer_write_full_event(ret_writer_t * w, const ret_full_event_t * ev)
 {
@@ -257,7 +263,10 @@ int ret_writer_write_full_event(ret_writer_t * w, const ret_full_event_t * ev)
     if (nw > ret) ret = nw; 
   }
   return ret; 
+  fprintf(stderr,"This only works with libtar support\n"); 
+  return -1; 
 }
+#endif
 
 void ret_writer_destroy(ret_writer_t *w) 
 {
