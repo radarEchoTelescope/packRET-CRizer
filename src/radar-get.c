@@ -17,6 +17,7 @@ const char * gps_serial = "/dev/ttyAMA0";
 int N = -1; 
 int compress = 0;
 int verbose = 0; 
+int quiet = 0; 
 
 int noutput_dirs = 0;
 const char * output_dir[16] = {0};
@@ -32,7 +33,7 @@ void sighandler(int sig)
 
 void usage() 
 {
-  fprintf(stderr, "radar-get [-h HOSTNAME=%s] [-i interrupt-gpio = %d] [-a ack_serial = %s ] [-g gps_serial = %s] [-N number = %d] [-o output_dir =(none)] [-o additional_output_dir=(none)] [-z] [-V]\n",
+  fprintf(stderr, "radar-get [-h HOSTNAME=%s] [-i interrupt-gpio = %d] [-a ack_serial = %s ] [-g gps_serial = %s] [-N number = %d] [-o output_dir =(none)] [-o additional_output_dir=(none)] [-z] [-V] [-q]\n",
       hostname, interrupt_gpio, ack_serial, gps_serial, N); 
   exit(1); 
 }
@@ -54,6 +55,13 @@ int main(int nargs, char ** args)
       verbose = 1; 
       continue; 
     }
+
+    if (!strcmp(args[i],"-q"))
+    {
+      quiet = 1; 
+      continue; 
+    }
+
 
 
 
@@ -116,19 +124,29 @@ int main(int nargs, char ** args)
      w = ret_writer_multi_init(noutput_dirs, output_dir, compress);  
   }
 
-  printf("{\n  \"events\" = [ "); 
+  if (!quiet) 
+    printf("{\n  \"events\" = [ "); 
   while(1) 
   {
     if (N > 0 && nevents > N) break; 
     if (!ret_radar_next_event(radar, &d)) 
     {
-      printf("  {\n"); 
-      printf("    \"i\":%d,\n", nevents); 
-      printf("    \"radar\" :"); 
-      ret_radar_rfsoc_dump(stdout,&d.rfsoc, 6); 
-      printf("    , \"gps_tm\" :\n"); 
-      ret_radar_gps_tm_dump(stdout,&d.gps, 6); 
-      printf("   }\n"); 
+      if (!quiet) 
+      {
+        printf("  {\n"); 
+        printf("    \"i\":%d,\n", nevents); 
+        printf("    \"radar\" :"); 
+        ret_radar_rfsoc_dump(stdout,&d.rfsoc, 6); 
+        printf("    , \"gps_tm\" :\n"); 
+        ret_radar_gps_tm_dump(stdout,&d.gps, 6); 
+        printf("   }\n"); 
+      }
+      else
+      {
+        printf(" Event %d\n", nevents); 
+      }
+      fflush(stdout); 
+
       nevents++; 
       if (noutput_dirs > 0) 
       {
@@ -139,7 +157,7 @@ int main(int nargs, char ** args)
     if (break_flag) break; 
   }
 
-  printf("  ]\n}\n"); 
+   if (!quiet) printf("  ]\n}\n"); 
   ret_radar_close(radar); 
   return 0; 
 }
