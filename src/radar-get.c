@@ -113,7 +113,7 @@ int main(int nargs, char ** args)
 
   if (noutput_dirs > 0) 
   {
-     w = ret_writer_multi_init(noutput_dirs, output_dir, 1);  
+     w = ret_writer_multi_init(noutput_dirs, output_dir, compress);  
   }
 
   printf("{\n  \"events\" = [ "); 
@@ -123,7 +123,7 @@ int main(int nargs, char ** args)
     if (!ret_radar_next_event(radar, &d)) 
     {
       printf("  {\n"); 
-      printf("    \"i\"=%d\n", nevents); 
+      printf("    \"i\":%d,\n", nevents); 
       printf("    \"radar\" :"); 
       ret_radar_rfsoc_dump(stdout,&d.rfsoc, 6); 
       printf("    , \"gps_tm\" :\n"); 
