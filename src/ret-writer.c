@@ -171,7 +171,7 @@ int ret_writer_write_radar(ret_writer_t * w, const ret_radar_data_t * rad)
 }
 
 
-#ifdef WITH_LIBTAR
+/*
 //todo implement tar compression 
 int ret_writer_write_full_event(ret_writer_t * w, const ret_full_event_t * ev)
 {
@@ -263,10 +263,8 @@ int ret_writer_write_full_event(ret_writer_t * w, const ret_full_event_t * ev)
     if (nw > ret) ret = nw; 
   }
   return ret; 
-  fprintf(stderr,"This only works with libtar support\n"); 
-  return -1; 
 }
-#endif
+*/
 
 void ret_writer_destroy(ret_writer_t *w) 
 {
