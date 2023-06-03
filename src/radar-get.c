@@ -129,6 +129,7 @@ int main(int nargs, char ** args)
   while(1) 
   {
     if (N > 0 && nevents > N) break; 
+    memset(&d,0,sizeof(d)); 
     if (!ret_radar_next_event(radar, &d)) 
     {
       if (!quiet) 
