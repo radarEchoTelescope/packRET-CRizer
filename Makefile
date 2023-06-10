@@ -7,7 +7,7 @@ INCLUDES=src/radar.h
 .PHONY: radar  clean
 
 
-radar: $(BUILD_DIR)/libradar.so  $(BUILD_DIR)/radar-get  $(BUILD_DIR)/test-tarbuf $(BUILD_DIR)/test-cody-listener $(BUILD_DIR)/fake-cody $(BUILD_DIR)/test-ret-writer  $(BUILD_DIR)/packetizer  $(BUILD_DIR)/radar-dump $(BUILD_DIR)/radar-hk
+radar: $(BUILD_DIR)/libradar.so  $(BUILD_DIR)/radar-get  $(BUILD_DIR)/test-tarbuf $(BUILD_DIR)/test-cody-listener $(BUILD_DIR)/fake-cody $(BUILD_DIR)/test-ret-writer  $(BUILD_DIR)/packetizer  $(BUILD_DIR)/radar-dump $(BUILD_DIR)/radar-hk $(BUILD_DIR)/ret-interceptty-helper
 
 clean: 
 	@echo Nuking $(BUILD_DIR) from orbit 

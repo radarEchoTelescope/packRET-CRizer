@@ -14,6 +14,8 @@
 #include <libiberty.h> 
 #include <poll.h> 
 #include <sys/file.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 
 
@@ -108,6 +110,27 @@ static int setup_serial(const char * dev, int baud)
   tcflush(fd, TCIOFLUSH); 
   return fd; 
 } 
+
+
+int setup_fifo_gpio(int fifonum) 
+{
+  char buf[64]; 
+  if (fifonum) 
+  {
+    sprintf(buf,"/tmp/ret-fifo-%d", fifonum); 
+  }
+  else
+  {
+    sprintf(buf,"/tmp/ret-fifo"); 
+  }
+
+  if (mkfifo(buf, 0666) )
+  {
+    return -1; 
+  }
+
+  return  open(buf, O_NONBLOCK | O_RDONLY); 
+}
 
 int setup_int_gpio(int gpionum) 
 {
@@ -219,6 +242,7 @@ struct ret_radar
   int gps_fd; 
   struct timespec timeout; 
   int verbose; 
+  int is_fifo; 
 };
 
 
@@ -262,9 +286,19 @@ ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio,
   CURL * curl = setup_curl_handle(hostname); 
   if (!curl) return NULL; 
 
-  int gpio_fd = setup_int_gpio(interrupt_gpio); 
-  if (gpio_fd <=0) return NULL; 
+  int gpio_fd = 0; 
+  int is_fifo = 0;
+  if (interrupt_gpio > 0) 
+  {
+    gpio_fd = setup_int_gpio(interrupt_gpio); 
+  }
+  else 
+  {
+    gpio_fd = setup_fifo_gpio(-interrupt_gpio); 
+    is_fifo = 1; 
+  }
 
+ if (gpio_fd <=0) return NULL; 
   int ack_fd = ack_serial ? setup_serial(ack_serial, 115200) : 0; 
   if (ack_fd <=0)
   {
@@ -284,6 +318,7 @@ ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio,
     return NULL; 
   }
 
+  ret->is_fifo = is_fifo;
   ret->tftp_handle = curl; 
   ret->int_fd = gpio_fd; 
   ret->ack_fd = ack_fd; 
@@ -328,9 +363,9 @@ void ret_radar_set_timeout(ret_radar_t * h, double t)
 static int do_poll(ret_radar_t * h) 
 {
   if (!h) return -1; 
-  char val; 
-  lseek(h->int_fd, 0, SEEK_SET); 
-  read(h->int_fd, &val,1); 
+  char val = '0'; 
+  if (!h->is_fifo) lseek(h->int_fd, 0, SEEK_SET); 
+  read(h->int_fd, &val,1);  //in FIFO case, this is opened nonblocking so 
   if (h->verbose) printf("Inside do_poll, at beginning val is %c\n",val); 
   if (val == '1' ) return 1; 
 
@@ -338,7 +373,7 @@ static int do_poll(ret_radar_t * h)
   ppoll(&h->interrupt_fdset, 1, (h->timeout.tv_sec == 0 && h->timeout.tv_nsec ==0) ? NULL : &h->timeout, 0); 
   if (h->verbose) printf("ppoll returned, val is %c\n", val); 
 
-  lseek(h->int_fd,0,SEEK_SET); 
+  if (!h->is_fifo) lseek(h->int_fd,0,SEEK_SET); 
   read(h->int_fd, &val,1); 
   return val=='1'; 
 }
