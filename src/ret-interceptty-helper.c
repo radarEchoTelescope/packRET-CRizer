@@ -15,7 +15,7 @@ int main(int nargs, char ** args)
   int match_len = strlen(match); 
 
   printf("Match string is \"%s\"\n", match); 
-  printf("Trying to open %s, this might block if it's not open!", fifo_name); 
+  printf("Trying to open %s, this might block if it's not open!\n", fifo_name); 
   int fd = open(fifo_name, O_WRONLY); 
 
   if (fd > 0) 
