@@ -59,12 +59,17 @@ int main(int nargs, char ** args)
       //great success
       if (nmatch == match_len) 
       {
-        printf("Matched string!\n"); 
+        printf("Matched string \"%s\"!\n", match); 
         if (1!=write(fd,"1",1))
         {
           fprintf(stderr,"Failed to write, is there nothing listening? Will try to reopen\n"); 
           close(fd); 
           break; 
+        }
+        else
+        {
+          printf(" ...sent trigger to fifo\n"); 
+          fflush(stdout); 
         }
       }
     }
