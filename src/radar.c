@@ -124,8 +124,13 @@ int setup_fifo_gpio(int fifonum)
     sprintf(buf,"/tmp/ret-fifo"); 
   }
 
+  if (!unlink(buf))
+  {
+    fprintf(stderr,"Removed old fifo at %s (this is normal if it existed already)\n", buf); 
+  }
   if (mkfifo(buf, 0666) )
   {
+    fprintf(stderr,"Could not make fifo at %s\n", buf); 
     return -1; 
   }
 
@@ -144,6 +149,11 @@ int setup_int_gpio(int gpionum)
     {
           //export the GPIO, lazy programming  
           FILE *fexport= fopen("/sys/class/gpio/export", "w"); 
+          if (!fexport) 
+          {
+            fprintf(stderr,"Could not open /sys/class/gpio/export... permissions issue?\n"); 
+            return 0; 
+          }
           fprintf(fexport,"%d\n", gpionum); 
           fflush(fexport); 
           fclose(fexport); 

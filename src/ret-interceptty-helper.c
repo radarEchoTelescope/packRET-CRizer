@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/stat.h> 
 #include <sys/file.h> 
+#include <time.h> 
 
 
 
@@ -28,8 +29,9 @@ int main(int nargs, char ** args)
     }
     else
     {
-      printf("open(%s) returned bad fd\n",fifo_name); 
-      return 1; 
+      printf("open(%s) returned bad fd. Sleeping and then retrying...\n",fifo_name); 
+      sleep(1); 
+      continue; 
     }
 
     char * line = NULL;
