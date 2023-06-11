@@ -144,7 +144,10 @@ int main(int nargs, char ** args)
       }
       else
       {
-        printf(" Event %d, crc: %u\n", nevents, d.rfsoc.crc32); 
+        struct timespec ts; 
+        ret_radar_fill_time(&d.gps, &ts); 
+        struct tm * gmt = gmtime(&ts.tv_sec); 
+        printf(" Event %d, crc: %u, trig_time: %02d:%02d:%02d.%09luZ\n", nevents, d.rfsoc.crc32, gmt->tm_hour, gmt->tm_min, gmt->tm_sec, ts.tv_nsec); 
       }
       fflush(stdout); 
 

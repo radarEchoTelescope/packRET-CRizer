@@ -81,7 +81,7 @@ int main(int nargs, char ** args)
         else
         {
           struct tm * t = gmtime(&ts.tv_sec); 
-          printf("Matched string and sent trigger to fifo at %d:%d:%d.%09luZ\n", t->tm_hour, t->tm_min, t->tm_sec, ts.tv_nsec); 
+          printf("Matched string and sent trigger to fifo at %02d:%02d:%02d.%09luZ\n", t->tm_hour, t->tm_min, t->tm_sec, ts.tv_nsec); 
           fflush(stdout); 
         }
       }
