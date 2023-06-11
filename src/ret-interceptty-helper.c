@@ -5,7 +5,17 @@
 #include <sys/stat.h> 
 #include <sys/file.h> 
 #include <time.h> 
+#include <signal.h> 
 
+volatile int got_sigpipe = 0; 
+
+void sigpipe_handler(int signum) 
+{
+  (void)signum; 
+
+  got_sigpipe = 1; 
+
+}
 
 
 int main(int nargs, char ** args) 
@@ -14,6 +24,7 @@ int main(int nargs, char ** args)
   const char * fifo_name = nargs < 3 ? "/tmp/ret-fifo" : args[2]; 
 
   int match_len = strlen(match); 
+  signal(SIGPIPE, sigpipe_handler); 
 
   printf("Match string is \"%s\"\n", match); 
 
@@ -38,7 +49,7 @@ int main(int nargs, char ** args)
     size_t line_size = 0; 
 
     int nmatch = 0; 
-    while (getline(&line, &line_size, stdin) )
+    while (getline(&line, &line_size, stdin) && !got_sigpipe )
     {
       if (line[0]!='>' || line_size < 10) continue; 
 
@@ -74,6 +85,11 @@ int main(int nargs, char ** args)
           fflush(stdout); 
         }
       }
+    }
+    if (got_sigpipe) 
+    {
+      fprintf(stderr,"Got sigpipe?\n"); 
+      got_sigpipe = 0; 
     }
   }
 
