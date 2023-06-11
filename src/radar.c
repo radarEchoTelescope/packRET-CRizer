@@ -422,6 +422,11 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d)
   struct timespec now; 
   clock_gettime(CLOCK_REALTIME,&now); 
 
+
+  //HACK HACK HACK, wait ~60 ms so we probably ahve a GPS update. The navigation rate is 15 Hz, and there is extra latency
+  //before we get here... 
+  if (h->is_fifo) usleep(600000); 
+
   if (h->gps_flush_flag) 
   {
     if (h->verbose) printf("flushing gps\n"); 
@@ -429,10 +434,6 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d)
     h->gps_flush_flag = 0;
   }
  
-  //HACK HACK HACK, wait ~60 ms so we probably ahve a GPS update. The navigation rate is 15 Hz, and there is extra latency
-  //before we get here... 
-  if (h->is_fifo) usleep(600000); 
-
  // tell the GPS we want the timestamps
   write(h->gps_fd,"G",1); 
 
