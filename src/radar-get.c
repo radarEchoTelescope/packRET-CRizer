@@ -144,7 +144,7 @@ int main(int nargs, char ** args)
       }
       else
       {
-        printf(" Event %d\n", nevents); 
+        printf(" Event %d, crc: %u\n", nevents, d.rfsoc.crc32); 
       }
       fflush(stdout); 
 
