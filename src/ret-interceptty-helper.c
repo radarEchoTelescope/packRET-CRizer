@@ -10,7 +10,7 @@
 
 int main(int nargs, char ** args) 
 {
-  const char * match = nargs < 2 ? "cc flag" : args[1]; 
+  const char * match = nargs < 2 ? "crc32" : args[1]; 
   const char * fifo_name = nargs < 3 ? "/tmp/ret-fifo" : args[2]; 
 
   int match_len = strlen(match); 
@@ -59,16 +59,17 @@ int main(int nargs, char ** args)
       //great success
       if (nmatch == match_len) 
       {
-        printf("Matched string \"%s\"!\n", match); 
+        struct timespec ts; 
+        clock_gettime(CLOCK_REALTIME,&ts); 
         if (1!=write(fd,"1",1))
         {
-          fprintf(stderr,"Failed to write, is there nothing listening? Will try to reopen\n"); 
+          fprintf(stderr,"Matched string, but failed to write, is there nothing listening? Will try to reopen\n"); 
           close(fd); 
           break; 
         }
         else
         {
-          printf(" ...sent trigger to fifo\n"); 
+          printf("Matched string and sent trigger to fifo at %s, ns: %lu\n", asctime(gmtime(&ts.tv_sec)),ts.tv_nsec); 
           fflush(stdout); 
         }
       }
