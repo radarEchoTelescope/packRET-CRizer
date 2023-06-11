@@ -413,13 +413,7 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d)
 
   curl_easy_setopt(h->tftp_handle, CURLOPT_WRITEDATA,&t); 
 
-  if (h->gps_flush_flag) 
-  {
-    if (h->verbose) printf("flushing gps\n"); 
-    tcflush(h->gps_fd, TCIOFLUSH); 
-    h->gps_flush_flag = 0;
-  }
- 
+
   // first we wait on the interrupt, potentially with a timeout
   if (!do_poll(h))
   {
@@ -428,6 +422,13 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d)
   struct timespec now; 
   clock_gettime(CLOCK_REALTIME,&now); 
 
+  if (h->gps_flush_flag) 
+  {
+    if (h->verbose) printf("flushing gps\n"); 
+    tcflush(h->gps_fd, TCIOFLUSH); 
+    h->gps_flush_flag = 0;
+  }
+ 
  // tell the GPS we want the timestamps
   write(h->gps_fd,"G",1); 
 
