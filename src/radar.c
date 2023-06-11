@@ -124,11 +124,11 @@ int setup_fifo_gpio(int fifonum)
     sprintf(buf,"/tmp/ret-fifo"); 
   }
 
-  if (!unlink(buf))
+  if (!access(buf, R_OK))
   {
-    fprintf(stderr,"Removed old fifo at %s (this is normal if it existed already)\n", buf); 
+    fprintf(stderr,"Using old fifo at %s (this is normal if it existed already)\n", buf); 
   }
-  if (mkfifo(buf, 0666) )
+  else if (mkfifo(buf, 0666) )
   {
     fprintf(stderr,"Could not make fifo at %s\n", buf); 
     return -1; 
