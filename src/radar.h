@@ -14,7 +14,7 @@ typedef struct ret_radar_gps_tm
   uint16_t weeknum; 
   uint32_t tow; 
   uint32_t tow_f; 
-  uint32_t acc; 
+  uint32_t acc;  // if this is 0xffffff this means it's the CPU time 
 } ret_radar_gps_tm_t; 
 
 

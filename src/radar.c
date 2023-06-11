@@ -19,6 +19,7 @@
 
 
 
+
 static char curl_error_msg[CURL_ERROR_SIZE]; 
 
 
@@ -253,6 +254,7 @@ struct ret_radar
   struct timespec timeout; 
   int verbose; 
   int is_fifo; 
+  int gps_flush_flag; 
 };
 
 
@@ -410,13 +412,23 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d)
   t.data= &d->rfsoc; 
 
   curl_easy_setopt(h->tftp_handle, CURLOPT_WRITEDATA,&t); 
+
+  if (h->gps_flush_flag) 
+  {
+    if (h->verbose) printf("flushing gps\n"); 
+    tcflush(h->gps_fd, TCIOFLUSH); 
+    h->gps_flush_flag = 0;
+  }
+ 
   // first we wait on the interrupt, potentially with a timeout
   if (!do_poll(h))
   {
     return -1; 
   }
+  struct timespec now; 
+  clock_gettime(CLOCK_REALTIME,&now); 
 
-  // tell the GPS we want the timestamps
+ // tell the GPS we want the timestamps
   write(h->gps_fd,"G",1); 
 
 
@@ -445,7 +457,25 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d)
 
 
   //read the GPS, TODO add error checking 
-  read(h->gps_fd, &d->gps, sizeof(d->gps)); 
+  int ngps = read(h->gps_fd, &d->gps, sizeof(d->gps)); 
+  if (ngps < (int) sizeof(d->gps))
+  {
+    fprintf(stderr,"WARNING only read %d bytes from GPS\n", ngps); 
+  }
+
+  static ret_radar_gps_tm_t allzeros; 
+  if (!memcmp(&allzeros, &d->gps, sizeof(allzeros)))
+  {
+    fprintf(stderr,"WARNING: GPS read all zeros. Time is bad and we probably get junk at the end..., setting flush flag to 1 and using current CPU time\n"); 
+    d->gps.acc = 0xffffff;
+    int gps_secs = now.tv_sec - 315964800 + 18; 
+    d->gps.weeknum = gps_secs / (7 * 24 * 3600); 
+    d->gps.tow = 1000 * (gps_secs % (7 * 24 * 3600)); 
+    d->gps.tow += now.tv_nsec / (1000000); 
+    d->gps.tow_f = now.tv_nsec % (1000000); 
+    h->gps_flush_flag = 1; 
+  }
+
   if (h->ack_fd >0) write(h->ack_fd,"!",1); 
 
   return 0; 
