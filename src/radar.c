@@ -324,7 +324,7 @@ ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio,
   ret->ack_fd = ack_fd; 
   ret->gps_fd = gps_fd; 
   ret->interrupt_fdset.fd = gpio_fd; 
-  ret->interrupt_fdset.events = POLLPRI; 
+  ret->interrupt_fdset.events = is_fifo ? POLLIN : POLLPRI; 
 
   return ret; 
 }
