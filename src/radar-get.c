@@ -85,6 +85,8 @@ int main(int nargs, char ** args)
     else if (!strcmp(args[i],"-g"))
     {
       gps_serial = args[++i];
+      //allow for setting null GPS serial 
+      if (!strcasecmp(gps_serial,"NULL")) gps_serial = NULL; 
     }
     else if (!strcmp(args[i],"-N"))
     {
