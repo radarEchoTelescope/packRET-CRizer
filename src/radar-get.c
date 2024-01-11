@@ -11,9 +11,9 @@
 static ret_radar_data_t d;
 
 const char * hostname = "192.168.97.30"; 
-int interrupt_gpio = 23;
+int interrupt_gpio = 0;
 const char * ack_serial =  "/dev/serial/by-id/usb-Xilinx_JTAG+3Serial_68646-if02-port0"; 
-const char * gps_serial = "/dev/ttyAMA0"; 
+const char * gps_serial = "/tmp/ret-timestamp"; 
 int N = -1; 
 int compress = 0;
 int verbose = 0; 
