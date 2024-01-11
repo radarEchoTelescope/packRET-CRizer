@@ -255,6 +255,7 @@ struct ret_radar
   int verbose; 
   int is_fifo; 
   int gps_flush_flag; 
+  int gps_is_file; 
 };
 
 
@@ -291,7 +292,7 @@ void ret_radar_hk_close(ret_radar_hk_t * h)
 }
 
 ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio,
-                             const char* ack_serial, const char * gps_serial) 
+                             const char* ack_serial, const char * gps_serial_or_file) 
 {
   //first try to open everything 
 
@@ -317,8 +318,34 @@ ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio,
     fprintf(stderr,"Running without ack? Is that what you want?\n"); 
   }
 
-  int gps_fd = setup_serial(gps_serial, 115200); 
-  if (gps_fd <=0) return NULL; 
+  //check if GPS is serial or file 
+  struct stat st; 
+  int gps_fd = 0; 
+  int gps_is_file = 0;
+  if (gps_serial_or_file) 
+  {
+    if (stat(gps_serial_or_file,&st))
+    {
+      fprintf(stderr,"Running stat on %s failed...sorry you won't get timestamps\n", gps_serial_or_file); 
+    }
+    else
+    {
+      //if it's a char device, then it's probably a serial port 
+      if (S_ISCHR(st.st_mode))
+      {
+          gps_fd = setup_serial(gps_serial_or_file, 115200); 
+          if (gps_fd <=0) return NULL; 
+      }
+      //otherwise treat it as a file
+      else
+      {
+          gps_fd = open(gps_serial_or_file, O_RDONLY); 
+          if (gps_fd <=0) return NULL; 
+          gps_is_file = 1; 
+      }
+    }
+  }
+  
 
 
   // we got everything open 
@@ -335,6 +362,7 @@ ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio,
   ret->int_fd = gpio_fd; 
   ret->ack_fd = ack_fd; 
   ret->gps_fd = gps_fd; 
+  ret->gps_is_file = gps_is_file; 
   ret->interrupt_fdset.fd = gpio_fd; 
   ret->interrupt_fdset.events = is_fifo ? POLLIN : POLLPRI; 
 
@@ -425,17 +453,20 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d)
 
   //HACK HACK HACK, wait ~60 ms so we probably ahve a GPS update. The navigation rate is 15 Hz, and there is extra latency
   //before we get here... 
-  if (h->is_fifo) usleep(600000); 
+  if (h->is_fifo && h->gps_fd && !h->gps_is_file) usleep(600000); 
 
-  if (h->gps_flush_flag) 
+  if (h->gps_flush_flag && h->gps_fd && !h->gps_is_file) 
   {
     if (h->verbose) printf("flushing gps\n"); 
     tcflush(h->gps_fd, TCIOFLUSH); 
     h->gps_flush_flag = 0;
   }
  
- // tell the GPS we want the timestamps
-  write(h->gps_fd,"G",1); 
+  // tell the GPS we want the timestamps, if we have a real GPS 
+  if (h->gps_fd && !h->gps_is_file) write(h->gps_fd,"G",1); 
+
+  // if gps is file, we want to seek to beginning always
+  if (h->gps_fd && h->gps_is_file) lseek(h->gps_fd,0,SEEK_SET); 
 
 
   int notok = 1;
@@ -461,25 +492,27 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d)
 
   }  
 
-
   //read the GPS, TODO add error checking 
-  int ngps = read(h->gps_fd, &d->gps, sizeof(d->gps)); 
-  if (ngps < (int) sizeof(d->gps))
+  if (h->gps_fd) 
   {
-    fprintf(stderr,"WARNING only read %d bytes from GPS\n", ngps); 
+    int ngps = read(h->gps_fd, &d->gps, sizeof(d->gps)); 
+    if (ngps < (int) sizeof(d->gps))
+    {
+      fprintf(stderr,"WARNING only read %d bytes from GPS\n", ngps); 
+    }
   }
 
   static ret_radar_gps_tm_t allzeros; 
-  if (!memcmp(&allzeros, &d->gps, sizeof(allzeros)))
+  if (!h->gps_fd || !memcmp(&allzeros, &d->gps, sizeof(allzeros)))
   {
-    fprintf(stderr,"WARNING: GPS read all zeros. Time is bad and we probably get junk at the end..., setting flush flag to 1 and using current CPU time\n"); 
+    if (h->gps_fd) fprintf(stderr,"WARNING: GPS read all zeros. Time is bad and we probably get junk at the end..., setting flush flag to 1 and using current CPU time\n"); 
     d->gps.acc = 0xffffff;
     int gps_secs = now.tv_sec - 315964800 + 18; 
     d->gps.weeknum = gps_secs / (7 * 24 * 3600); 
     d->gps.tow = 1000 * (gps_secs % (7 * 24 * 3600)); 
     d->gps.tow += now.tv_nsec / (1000000); 
     d->gps.tow_f = now.tv_nsec % (1000000); 
-    h->gps_flush_flag = 1; 
+    if (h->gps_fd && !h->gps_is_file) h->gps_flush_flag = 1; 
   }
 
   if (h->ack_fd >0) write(h->ack_fd,"!",1); 
@@ -495,7 +528,7 @@ void ret_radar_close(ret_radar_t * h)
   curl_easy_cleanup(h->tftp_handle); 
   close(h->int_fd); 
   close(h->ack_fd); 
-  close(h->gps_fd); 
+  if (h->gps_fd) close(h->gps_fd); 
   free(h); 
 }
 

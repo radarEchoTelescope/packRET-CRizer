@@ -81,9 +81,9 @@ typedef struct ret_radar_hk_data
 //   hostname is the hostname to connect to ,
 //   interrupt_gpio is the gpio number for the interrupt, if you pass 0 or a negative number, a fifo will be used with the name /tmp/ret-fifo[-N] where N is the absolute value of the number if non-zero
 //   ack_serial is the serial device to send acks too 
-//   gps_serial is the serial device to get GPS time marks from 
+//   gps_serial_or_file is the serial device or file to get GPS time marks from
 
-ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio, const char* ack_serial, const char * gps_serial); 
+ret_radar_t *ret_radar_open(const char * hostname, int interrupt_gpio, const char* ack_serial, const char * gps_serial_or_file); 
 
 // open a handle for reading housekeeping (this would generally be asynchronous from events) 
 ret_radar_hk_t * ret_radar_hk_open(const char * hk_serial);
