@@ -421,9 +421,11 @@ static int do_poll(ret_radar_t * h)
 
 int ret_radar_data_check_crc(const ret_radar_rfsoc_data_t * d) 
 {
-
+//printf("crc checking...");
+//fflush(stdout);
     uint8_t * cdata = (uint8_t*) d;
-    uint32_t crc = xcrc32( cdata + sizeof(crc), sizeof(ret_radar_rfsoc_data_t) - sizeof(crc),0xffffffff); 
+    uint32_t crc = xcrc32( cdata+sizeof(crc) , sizeof(ret_radar_rfsoc_data_t) - sizeof(crc),0xffffffff); 
+//printf("size of the RET event: %u",  sizeof(ret_radar_rfsoc_data_t));
     if (crc == d->crc32)
     {
       return 0; 
@@ -477,7 +479,8 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d)
     //this is blocking. Maybe use non-blocking later so can read serial and gps timestamp at same time? 
     if (h->verbose) printf("Calling curl easy perform\n"); 
     notok = curl_easy_perform(h->tftp_handle); 
-    if (h->verbose) printf("curl easy perform returned %d\n", notok); 
+    if(h->verbose)printf("data size %d\n", sizeof(d->rfsoc));
+    if (h->verbose) printf("curl easy perform returned %d !\n", notok); 
 
 
     if (notok || ret_radar_data_check_crc(&d->rfsoc))
@@ -491,16 +494,18 @@ int ret_radar_next_event(ret_radar_t * h, ret_radar_data_t * d)
     }
 
   }  
-
   //read the GPS, TODO add error checking 
   if (h->gps_fd) 
   {
     int ngps = read(h->gps_fd, &d->gps, sizeof(d->gps)); 
+   if(h->verbose) printf("gps n bytes %d\n", ngps);
     if (ngps < (int) sizeof(d->gps))
     {
       fprintf(stderr,"WARNING only read %d bytes from GPS\n", ngps); 
     }
   }
+//if(h->verbose)printf( "read GPS...");
+if(h->verbose)printf("gps acc %d\n", d->gps.acc);
 
   static ret_radar_gps_tm_t allzeros; 
   if (!h->gps_fd || !memcmp(&allzeros, &d->gps, sizeof(allzeros)))
@@ -549,22 +554,25 @@ int ret_radar_rfsoc_dump(FILE *f, const ret_radar_rfsoc_data_t *data, int indent
   dump_u32(index); 
   dump_u32(struct_version); 
   dump_u64(cpu_time); 
-  dump_u32(surface_trigger_info); 
-  dump_arr(station_counter, "%"PRIu64, 6); 
-  dump_arr(l0_rate_monitor, "%u", 6); 
+  dump_u32(trigger_info); 
+  dump_arr(l0_station_counter, "%"PRIu64, 12);
+  dump_arr(l1_station_counter_second, "%u", 6);
+  dump_arr(l1_station_counter_subsecond, "%u", 6);
+  dump_arr(l0_rate_monitor, "%u", 12);
+  dump_arr(l1_rate_monitor, "%u", 6); 
   dump_u32(adc_read_index);
-  dump_u32(dac_write_index);
   dump_u32(rf_threshold);
   dump_u32(n_surface_stations);
   dump_u32(rf_read_window);
   dump_u32(carrier_cancel_flag);
   dump_u32(tx_atten);
-  dump_u32(cc_atten);
-  dump_arr(tx_phase,"%f",4); 
-  dump_arr(tx_amplitude,"%f",4); 
+  dump_arr(cc_atten, "%u", 4);
+  dump_float(tx_phase);
+  dump_float(tx_amplitude); 
   dump_float(cc_amplitude); 
+  dump_arr(cc_delay, "%f", 4)
   dump_u32(tx_mode); 
-  dump_u32(tx_freq); 
+  dump_float(tx_freq); 
   dump_u32(priority); 
   dump_arr(adc_0_data,"%hd",16384);
   dump_arr(adc_1_data,"%hd",16384);
